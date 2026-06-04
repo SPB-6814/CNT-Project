@@ -8,6 +8,13 @@ import { Matrix } from '@/lib/mceliece';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download } from 'lucide-react';
 
+interface HybridPayload {
+  filename: string;
+  iv: number[];
+  encryptedPayload: string;
+  ciphertexts: Matrix[];
+}
+
 interface Props {
   isDecrypting: boolean;
   onDecrypt: (privateKey: { S: Matrix, G: Matrix, P: Matrix }, ciphertexts: Matrix[]) => Promise<string>;
@@ -17,7 +24,7 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
   const [privateKey, setPrivateKey] = useState<any>(null);
   const [privFileName, setPrivFileName] = useState<string>('');
   
-  const [ciphertexts, setCiphertexts] = useState<Matrix[] | null>(null);
+  const [hybridPayload, setHybridPayload] = useState<HybridPayload | null>(null);
   const [encFileName, setEncFileName] = useState<string>('');
   const [originalFileNameDecrypted, setOriginalFileNameDecrypted] = useState<string>('decrypted_file.txt');
   
@@ -48,11 +55,11 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
-          if (data.ciphertexts) {
-            setCiphertexts(data.ciphertexts);
-            if (data.filename) {
-              setOriginalFileNameDecrypted(data.filename);
-            }
+          if (data.ciphertexts && data.iv && data.encryptedPayload) {
+            setHybridPayload(data);
+            setOriginalFileNameDecrypted(data.filename || 'decrypted_file.txt');
+          } else {
+            alert("This payload uses the old encryption format without AES. Please re-encrypt.");
           }
         } catch (err) {
           alert("Invalid encrypted file");
@@ -62,10 +69,44 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
     }
   };
 
+  const base64ToArrayBufferAsync = async (base64: string): Promise<ArrayBuffer> => {
+    const res = await fetch(`data:application/octet-stream;base64,${base64}`);
+    return await res.arrayBuffer();
+  };
+
   const handleDecrypt = async () => {
-    if (!privateKey || !ciphertexts) return;
-    const text = await onDecrypt(privateKey, ciphertexts);
-    setDecryptedText(text);
+    if (!privateKey || !hybridPayload) return;
+    
+    try {
+      // 1. Decrypt AES Key using McEliece
+      const keyStringBase64 = await onDecrypt(privateKey, hybridPayload.ciphertexts);
+      const keyBuffer = await base64ToArrayBufferAsync(keyStringBase64);
+      
+      const aesKey = await window.crypto.subtle.importKey(
+        "raw",
+        keyBuffer,
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"]
+      );
+
+      // 2. Decrypt Payload using AES
+      const iv = new Uint8Array(hybridPayload.iv);
+      const encryptedContentBuffer = await base64ToArrayBufferAsync(hybridPayload.encryptedPayload);
+      
+      const decryptedContent = await window.crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        aesKey,
+        encryptedContentBuffer
+      );
+      
+      const decoder = new TextDecoder();
+      const text = decoder.decode(decryptedContent);
+      setDecryptedText(text);
+    } catch(err) {
+      alert("Decryption failed. Incorrect private key or corrupted data.");
+      console.error(err);
+    }
   };
 
   const downloadFileFromDataUrl = () => {
@@ -83,7 +124,7 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
       <CardHeader>
         <CardTitle className="text-xl text-primary font-mono tracking-tight">Decrypt Data</CardTitle>
         <CardDescription className="text-muted-foreground font-sans">
-          Upload an encrypted packet and your private key to reverse the process.
+          Upload a hybrid-encrypted packet and your private key to reverse the process.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -110,10 +151,10 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
 
         <Button 
           onClick={handleDecrypt} 
-          disabled={isDecrypting || !privateKey || !ciphertexts}
+          disabled={isDecrypting || !privateKey || !hybridPayload}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
         >
-          {isDecrypting ? "DECRYPTING..." : "EXECUTE DECRYPTION"}
+          {isDecrypting ? "DECRYPTING (HYBRID)..." : "EXECUTE DECRYPTION"}
         </Button>
 
         <AnimatePresence>
@@ -144,7 +185,6 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
                           {(() => {
                             try {
                               const base64Data = decryptedText.split(',')[1];
-                              // atob decodes base64 back to text
                               return decodeURIComponent(escape(atob(base64Data)));
                             } catch (e) {
                               return "Preview not available.";

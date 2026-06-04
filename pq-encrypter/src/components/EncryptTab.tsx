@@ -9,6 +9,13 @@ import { Matrix } from '@/lib/mceliece';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
 
+interface HybridPayload {
+  filename: string;
+  iv: number[];
+  encryptedPayload: string;
+  ciphertexts: Matrix[];
+}
+
 interface Props {
   isEncrypting: boolean;
   onEncrypt: (publicKey: { G_hat: Matrix }, text: string) => Promise<Matrix[]>;
@@ -22,7 +29,7 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
   const [originalFileName, setOriginalFileName] = useState<string>('message.txt');
   const [payloadFileName, setPayloadFileName] = useState<string>('');
   
-  const [ciphertexts, setCiphertexts] = useState<Matrix[] | null>(null);
+  const [hybridPayload, setHybridPayload] = useState<HybridPayload | null>(null);
 
   const onDropPub = (files: File[]) => {
     const file = files[0];
@@ -48,29 +55,75 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
       setOriginalFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
-        // We encrypt the Data URL directly for files (e.g., data:application/pdf;base64,JVBERi0...)
         setText(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const handleEncrypt = async () => {
     if (!publicKey || !text) return;
-    const result = await onEncrypt(publicKey, text);
-    setCiphertexts(result);
+    
+    try {
+      // 1. Generate AES-GCM Key (256-bit)
+      const aesKey = await window.crypto.subtle.generateKey(
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+
+      // 2. Encrypt Payload with AES
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encoder = new TextEncoder();
+      const encodedPayload = encoder.encode(text);
+      
+      const encryptedContent = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        aesKey,
+        encodedPayload
+      );
+      
+      // Convert large ArrayBuffer to Base64 safely
+      const encryptedPayloadBase64 = await blobToBase64(new Blob([encryptedContent]));
+
+      // 3. Export AES key to encrypt with McEliece
+      const rawKey = await window.crypto.subtle.exportKey("raw", aesKey);
+      const keyString = await blobToBase64(new Blob([rawKey]));
+      
+      // 4. Encrypt AES Key with Post-Quantum McEliece algorithm
+      const resultCiphertexts = await onEncrypt(publicKey, keyString);
+      
+      setHybridPayload({
+        filename: originalFileName,
+        iv: Array.from(iv),
+        encryptedPayload: encryptedPayloadBase64,
+        ciphertexts: resultCiphertexts
+      });
+    } catch (err) {
+      alert("Encryption failed. File might be too large or invalid.");
+      console.error(err);
+    }
   };
 
   const downloadEncrypted = () => {
-    if (!ciphertexts) return;
+    if (!hybridPayload) return;
     const element = document.createElement("a");
-    const fileData = JSON.stringify({ 
-      filename: originalFileName,
-      ciphertexts 
-    });
+    const fileData = JSON.stringify(hybridPayload);
     const file = new Blob([fileData], { type: 'application/json' });
     element.href = URL.createObjectURL(file);
-    element.download = `${originalFileName}.enc.json`;
+    element.download = `${hybridPayload.filename}.enc.json`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -81,7 +134,7 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
       <CardHeader>
         <CardTitle className="text-xl text-primary font-mono tracking-tight">Encrypt Data</CardTitle>
         <CardDescription className="text-muted-foreground font-sans">
-          Upload a public key and enter data (or drop a file) to encrypt using the McEliece cryptosystem.
+          Upload a public key and enter data (or drop a file) to securely encrypt.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -100,7 +153,7 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
           <Tabs defaultValue="text" className="w-full border border-border rounded-md p-2">
             <TabsList className="grid w-full grid-cols-2 bg-background mb-4">
               <TabsTrigger value="text" className="font-mono text-xs">TEXT INPUT</TabsTrigger>
-              <TabsTrigger value="file" className="font-mono text-xs">FILE UPLOAD (.txt, .pdf)</TabsTrigger>
+              <TabsTrigger value="file" className="font-mono text-xs">FILE UPLOAD (Any Size)</TabsTrigger>
             </TabsList>
             <TabsContent value="text">
               <Textarea 
@@ -117,7 +170,7 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
             <TabsContent value="file">
               <FileDropzone 
                 onDrop={onDropPayload} 
-                label={payloadFileName ? `Loaded payload: ${payloadFileName}` : "Drag & drop a file (.txt, .pdf, etc.)"} 
+                label={payloadFileName ? `Loaded payload: ${payloadFileName}` : "Drag & drop ANY file (PDF, JPG, etc.)"} 
                 className={payloadFileName ? "border-primary text-primary" : ""}
               />
             </TabsContent>
@@ -129,23 +182,23 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
           disabled={isEncrypting || !publicKey || !text}
           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
         >
-          {isEncrypting ? "ENCRYPTING..." : "EXECUTE ENCRYPTION"}
+          {isEncrypting ? "ENCRYPTING (HYBRID)..." : "EXECUTE ENCRYPTION"}
         </Button>
 
         <AnimatePresence>
-          {ciphertexts && (
+          {hybridPayload && (
             <motion.div 
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="space-y-4 pt-4 border-t border-border overflow-hidden"
             >
               <div className="p-4 border border-border rounded bg-background/50">
-                <h3 className="text-sm font-mono text-primary mb-2 border-b border-primary/30 pb-1">Encryption Successful</h3>
-                <p className="text-xs font-mono text-muted-foreground break-all mb-4 line-clamp-3">
-                  {JSON.stringify(ciphertexts).substring(0, 200)}...
+                <h3 className="text-sm font-mono text-primary mb-2 border-b border-primary/30 pb-1">Hybrid Encryption Successful</h3>
+                <p className="text-[10px] text-muted-foreground font-sans mb-4">
+                  File encrypted via AES-256-GCM. AES key encrypted via McEliece [7,4,1].
                 </p>
                 <Button variant="outline" size="sm" onClick={downloadEncrypted} className="w-full font-mono text-xs border-primary/50 text-primary hover:bg-primary/10">
-                  DOWNLOAD {originalFileName.toUpperCase()}.ENC.JSON
+                  DOWNLOAD {hybridPayload.filename.toUpperCase()}.ENC.JSON
                 </Button>
               </div>
             </motion.div>

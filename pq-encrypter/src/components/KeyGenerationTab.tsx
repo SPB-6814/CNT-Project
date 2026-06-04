@@ -55,18 +55,7 @@ export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
             Initialize McEliece cryptosystem parameters. Generates Public and Private Keypairs based on the [7, 4, 1] Hamming code.
           </CardDescription>
         </div>
-        {keys && (
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleGenerate} 
-            disabled={isGenerating} 
-            className="font-mono text-xs border-primary/50 text-primary hover:bg-primary/10 ml-4 hidden md:flex"
-          >
-            <RefreshCw className={`w-3 h-3 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
-            REGENERATE
-          </Button>
-        )}
+
       </CardHeader>
       <CardContent className="space-y-6">
         {!keys && (
@@ -88,7 +77,12 @@ export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 border border-border rounded bg-background/50">
-                  <h3 className="text-sm font-mono text-warning mb-2 border-b border-warning/30 pb-1">Private Key Elements</h3>
+                  <div className="flex justify-between items-center mb-2 border-b border-warning/30 pb-1">
+                    <h3 className="text-sm font-mono text-warning">Private Key Elements</h3>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-warning hover:text-warning/80 hover:bg-warning/10" onClick={handleGenerate} disabled={isGenerating}>
+                      <RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </div>
                   <div className="text-[10px] overflow-x-auto">
                     <BlockMath math={matrixToLatex(keys.privateKey.S, "S")} />
                     <BlockMath math={matrixToLatex(keys.privateKey.G, "G")} />
@@ -101,7 +95,12 @@ export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
                 
                 <div className="p-4 border border-border rounded bg-background/50 flex flex-col justify-between">
                   <div>
-                    <h3 className="text-sm font-mono text-primary mb-2 border-b border-primary/30 pb-1">Public Key Element</h3>
+                    <div className="flex justify-between items-center mb-2 border-b border-primary/30 pb-1">
+                      <h3 className="text-sm font-mono text-primary">Public Key Element</h3>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 text-primary hover:text-primary/80 hover:bg-primary/10" onClick={handleGenerate} disabled={isGenerating}>
+                        <RefreshCw className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground mb-2"><InlineMath math="\hat{G} = S \cdot G \cdot P" /></p>
                     <div className="text-[10px] overflow-x-auto">
                       <BlockMath math={matrixToLatex(keys.publicKey.G_hat, "\\hat{G}")} />
@@ -113,16 +112,7 @@ export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
                 </div>
               </div>
 
-              {/* Mobile regenerate button */}
-              <Button 
-                variant="outline" 
-                onClick={handleGenerate} 
-                disabled={isGenerating} 
-                className="w-full font-mono text-xs border-primary/50 text-primary hover:bg-primary/10 md:hidden mt-4"
-              >
-                <RefreshCw className={`w-3 h-3 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
-                REGENERATE KEYPAIR
-              </Button>
+
             </motion.div>
           )}
         </AnimatePresence>
