@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post-Quantum File Encrypter | Alice's Vault</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: #131314;
+            color: #e5e2e3;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(30, 30, 32, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(132, 150, 126, 0.3);
+        }
+        .terminal-glow {
+            box-shadow: 0 0 15px rgba(0, 230, 57, 0.15);
+        }
+        .marching-ants {
+            background-image: linear-gradient(90deg, #00E639 50%, transparent 50%), linear-gradient(90deg, #00E639 50%, transparent 50%), linear-gradient(0deg, #00E639 50%, transparent 50%), linear-gradient(0deg, #00E639 50%, transparent 50%);
+            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+            background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+            background-position: left top, right bottom, left bottom, right top;
+            animation: border-dance 1s infinite linear;
+        }
+        @keyframes border-dance {
+            0% { background-position: left top, right bottom, left bottom, right top; }
+            100% { background-position: left 15px top, right 15px bottom, left bottom 15px, right top 15px; }
+        }
+        .matrix-digit {
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+        @keyframes matrix-fall {
+            0% { transform: translateY(-20px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
+        }
+        .encrypting-digit {
+            animation: matrix-fall 0.8s infinite linear;
+        }
+        .error-injection {
+            color: #ffbf00 !important;
+            text-shadow: 0 0 8px #ffbf00;
+            font-weight: 800;
+        }
+        .success-glow {
+            box-shadow: 0 0 25px rgba(0, 230, 57, 0.4);
+            border-color: #00E639 !important;
+        }
+        .drag-glow:hover {
+            box-shadow: inset 0 0 20px rgba(0, 230, 57, 0.1);
+            border-color: rgba(0, 230, 57, 0.5) !important;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                "primary": "#ebffe2",
+                "secondary-container": "#ffbf00",
+                "on-primary-fixed": "#002203",
+                "outline": "#84967e",
+                "on-primary": "#003907",
+                "surface-variant": "#353436",
+                "on-secondary": "#402d00",
+                "primary-fixed": "#72ff70",
+                "surface": "#131314",
+                "primary-fixed-dim": "#00e639",
+                "on-surface": "#e5e2e3",
+                "on-secondary-fixed": "#261a00",
+                "on-secondary-fixed-variant": "#5c4300",
+                "surface-container-highest": "#353436",
+                "on-primary-fixed-variant": "#00530e",
+                "error-container": "#93000a",
+                "on-primary-container": "#007117",
+                "surface-container-low": "#1c1b1c",
+                "tertiary-container": "#dfdcde",
+                "on-tertiary-fixed": "#1b1b1d",
+                "surface-container-lowest": "#0e0e0f",
+                "inverse-surface": "#e5e2e3",
+                "surface-container-high": "#2a2a2b",
+                "on-error-container": "#ffdad6",
+                "primary-container": "#00ff41",
+                "error": "#ffb4ab",
+                "secondary-fixed": "#ffdfa0",
+                "tertiary": "#fbf8fb",
+                "secondary-fixed-dim": "#fbbc00",
+                "on-tertiary-container": "#616063",
+                "on-error": "#690005",
+                "tertiary-fixed": "#e4e2e4",
+                "on-surface-variant": "#b9ccb2",
+                "secondary": "#ffe2ab",
+                "on-background": "#e5e2e3",
+                "on-tertiary-fixed-variant": "#474649",
+                "surface-container": "#201f20",
+                "surface-bright": "#3a393a",
+                "inverse-on-surface": "#313031",
+                "inverse-primary": "#006e16",
+                "surface-dim": "#131314",
+                "on-tertiary": "#303032",
+                "background": "#131314",
+                "tertiary-fixed-dim": "#c8c6c8",
+                "on-secondary-container": "#6d5000",
+                "surface-tint": "#00e639",
+                "outline-variant": "#3b4b37"
+              },
+              "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+              },
+              "spacing": {
+                "md": "24px",
+                "margin-mobile": "16px",
+                "xl": "80px",
+                "base": "8px",
+                "sm": "12px",
+                "xs": "4px",
+                "gutter": "24px",
+                "margin-desktop": "64px",
+                "lg": "48px"
+              },
+              "fontFamily": {
+                "headline-sm": ["JetBrains Mono"],
+                "headline-lg": ["JetBrains Mono"],
+                "body-md": ["Inter"],
+                "headline-md": ["JetBrains Mono"],
+                "body-lg": ["Inter"],
+                "label-sm": ["JetBrains Mono"],
+                "label-md": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                "label-sm": ["10px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                "label-md": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-surface/80 backdrop-blur-md border-b border-outline/30 shadow-[0_0_15px_rgba(0,230,57,0.1)]">
+<div class="font-headline-md text-headline-md font-bold tracking-tighter text-primary-fixed uppercase">
+        POST-QUANTUM FILE ENCRYPTER
+    </div>
+<div class="hidden md:flex items-center gap-lg">
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all" href="#">Key Generation Chamber</a>
+<a class="font-label-md text-label-md text-primary-fixed border-b-2 border-primary-fixed pb-1" href="#">Encrypt (Alice)</a>
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all" href="#">Decrypt (Bob)</a>
+</div>
+<div class="flex items-center gap-md text-primary-fixed">
+<button class="hover:text-primary-fixed transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="hover:text-primary-fixed transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="mt-24 px-margin-desktop max-w-[1440px] mx-auto min-h-screen pb-xl">
+<div class="flex flex-col gap-lg">
+<!-- Header Section -->
+<header>
+<h1 class="font-headline-lg text-headline-lg text-primary-fixed-dim uppercase tracking-widest flex items-center gap-sm">
+<span class="material-symbols-outlined text-[32px]" data-icon="security" style="font-variation-settings: 'FILL' 1;">security</span>
+                Alice’s Vault: Encryption
+            </h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs opacity-70">
+                Lattice-based cryptographic engine. Secure against Shor’s algorithm.
+            </p>
+</header>
+<!-- Main Interactive Area: 2-Column Bento -->
+<div class="grid grid-cols-12 gap-gutter">
+<!-- Left Column: Input Control -->
+<div class="col-span-12 lg:col-span-7 flex flex-col gap-gutter">
+<!-- Drag & Drop Zone -->
+<div class="glass-panel p-md flex flex-col gap-md">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-tighter">01. Select Payload</label>
+<span class="font-label-sm text-label-sm text-on-surface-variant/50">ACCEPTED: .TXT, .RAW, .UTF8</span>
+</div>
+<div class="h-64 border-2 border-dashed border-outline/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary-fixed-dim transition-all group relative overflow-hidden drag-glow" id="drop-zone">
+<div class="absolute inset-0 opacity-10 bg-gradient-to-br from-primary-fixed to-transparent"></div>
+<span class="material-symbols-outlined text-4xl text-on-surface-variant mb-sm group-hover:scale-110 transition-transform" data-icon="upload_file">upload_file</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-center px-lg">
+                            Drag and drop message files here or <span class="text-primary-fixed underline decoration-primary-fixed/30">browse workstation</span>
+</p>
+<textarea class="absolute bottom-4 left-4 right-4 bg-surface-container-lowest/80 border border-outline/20 rounded p-sm font-headline-sm text-label-md text-primary-fixed focus:outline-none focus:border-primary-fixed transition-all" id="direct-input" placeholder="Or type secret message directly..."></textarea>
+</div>
+</div>
+<!-- Key Upload Slot -->
+<div class="glass-panel p-md flex flex-col gap-md">
+<div class="flex justify-between items-center">
+<label class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-tighter">02. Recipient’s Public Key</label>
+<span class="material-symbols-outlined text-secondary-container" data-icon="key_visualizer" style="font-variation-settings: 'FILL' 1;">key_visualizer</span>
+</div>
+<div class="flex gap-md">
+<div class="flex-grow bg-surface-container-lowest border border-outline/30 rounded h-12 flex items-center px-md overflow-hidden">
+<span class="material-symbols-outlined text-on-surface-variant mr-sm" data-icon="key">key</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-md font-label-md text-on-surface-variant/60 w-full" placeholder="Waiting for Public Key (.pub) upload..." readonly="" type="text"/>
+</div>
+<button class="bg-surface-container-high border border-outline/30 px-md hover:bg-surface-bright transition-colors font-label-md text-label-md uppercase">Upload</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Visualization & Status -->
+<div class="col-span-12 lg:col-span-5 flex flex-col gap-gutter">
+<!-- Encryption Logic Visualization -->
+<div class="glass-panel p-md flex-grow flex flex-col gap-md min-h-[400px]">
+<label class="font-label-md text-label-md text-primary-fixed-dim uppercase tracking-tighter flex items-center gap-xs">
+<span class="material-symbols-outlined text-xs" data-icon="memory">memory</span>
+                        Process Visualization
+                    </label>
+<div class="flex-grow bg-[#0A0A0B] border border-outline/20 rounded-lg p-md relative overflow-hidden flex flex-col items-center justify-center" id="visualizer">
+<!-- Background Noise Grid -->
+<div class="absolute inset-0 opacity-5 pointer-events-none" style="background-image: radial-gradient(#00FF41 1px, transparent 1px); background-size: 20px 20px;"></div>
+<div class="grid grid-cols-10 gap-x-2 gap-y-1 opacity-40 font-mono" id="matrix-container">
+<!-- JS populated digits -->
+</div>
+<div class="z-10 text-center flex flex-col items-center gap-md" id="status-overlay">
+<div class="w-16 h-16 border-2 border-primary-fixed-dim/30 rounded-full flex items-center justify-center animate-pulse" id="status-icon">
+<span class="material-symbols-outlined text-3xl text-primary-fixed-dim" data-icon="shield_lock">shield_lock</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary-fixed tracking-widest uppercase" id="status-label">Awaiting Inputs</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant max-w-xs" id="status-description">System ready for Lattice-Based Encryption. Public key required.</div>
+</div>
+</div>
+</div>
+<!-- Action Zone -->
+<div class="flex flex-col gap-md">
+<button class="w-full h-16 bg-primary-container text-on-primary-fixed font-headline-md text-headline-md uppercase font-extrabold flex items-center justify-center gap-md hover:shadow-[0_0_20px_rgba(0,255,65,0.4)] transition-all active:scale-95 group relative overflow-hidden" id="encrypt-btn" onclick="simulateEncryption()">
+<span class="relative z-10 flex items-center gap-md" id="btn-text">
+                            Encrypt Payload
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</span>
+</button>
+<button class="w-full h-14 bg-surface-container-high text-on-surface-variant/30 font-label-md text-label-md uppercase border border-outline/10 flex items-center justify-center gap-sm transition-all duration-500 cursor-not-allowed" disabled="" id="download-btn">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                        Download Ciphertext (.enc)
+                    </button>
+</div>
+</div>
+</div>
+<!-- Learning / Info Section (Warning Box Pattern) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="border-l-4 border-secondary-container bg-secondary-container/5 p-md">
+<h4 class="font-label-md text-label-md text-secondary-container mb-xs flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="warning">warning</span>
+                    Entropy Alert
+                </h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant/80">Ensure input payload has high entropy for maximum resistance against side-channel analysis.</p>
+</div>
+<div class="border-l-4 border-primary-fixed-dim bg-primary-fixed-dim/5 p-md">
+<h4 class="font-label-md text-label-md text-primary-fixed-dim mb-xs flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="info">info</span>
+                    Lattice Protocol
+                </h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant/80">Utilizing Learning with Errors (LWE) parameters set to 256-bit security level.</p>
+</div>
+<div class="border-l-4 border-outline bg-surface-container p-md">
+<h4 class="font-label-md text-label-md text-outline mb-xs flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+                    Vault Log
+                </h4>
+<p class="font-label-sm text-label-sm text-on-surface-variant/80">Last key rotation: 2h 14m ago. Workstation integrity: VERIFIED.</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-md px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-xs bg-surface-container-lowest/90 backdrop-blur-lg border-t border-outline/20">
+<div class="flex items-center gap-sm">
+<span class="text-primary-fixed font-headline-sm uppercase tracking-tighter">POST-QUANTUM FILE ENCRYPTER</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant/50">|</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant/50 uppercase">v4.0 Enterprise</span>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant/50 text-center">
+        Engineered by Sparsh Pai Bir | Computer Engineering
+    </div>
+<div class="flex gap-md font-label-sm text-label-sm">
+<a class="text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Documentation</a>
+<a class="text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Source Code</a>
+<a class="text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Security Audit</a>
+</div>
+</footer>
+<script>
+    // Matrix Animation
+    const container = document.getElementById('matrix-container');
+    const generateMatrix = () => {
+        container.innerHTML = '';
+        for(let i=0; i<100; i++) {
+            const span = document.createElement('span');
+            span.className = 'matrix-digit text-[12px] text-primary-fixed/20';
+            span.innerText = Math.floor(Math.random() * 2);
+            container.appendChild(span);
+        }
+    };
+    generateMatrix();
+
+    // Drag and Drop Visual Feedback
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('marching-ants');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('marching-ants');
+    });
+
+    // Simulation
+    function simulateEncryption() {
+        const btn = document.getElementById('encrypt-btn');
+        const btnText = document.getElementById('btn-text');
+        const status = document.getElementById('status-label');
+        const statusDesc = document.getElementById('status-description');
+        const statusIcon = document.getElementById('status-icon');
+        const downloadBtn = document.getElementById('download-btn');
+        const visualizerDigits = document.querySelectorAll('.matrix-digit');
+
+        if (btn.disabled) return;
+
+        // Button State: Processing
+        btn.disabled = true;
+        btn.classList.add('animate-pulse');
+        btnText.innerHTML = 'Processing... <span class="material-symbols-outlined animate-spin" data-icon="refresh">refresh</span>';
+        
+        status.innerText = 'Matrix Multiplication...';
+        status.classList.add('animate-pulse');
+        
+        // Matrix Multiplication & Error Injection Viz
+        let tick = 0;
+        let interval = setInterval(() => {
+            tick++;
+            visualizerDigits.forEach((d, idx) => {
+                // Shifting matrix feel
+                const newVal = Math.floor(Math.random() * 2);
+                d.innerText = newVal;
+                d.classList.add('encrypting-digit');
+                
+                // Color shift based on progress
+                if (tick > 10) {
+                    d.style.color = '#00FF41';
+                    d.style.opacity = '0.8';
+                }
+
+                // Random "Error Injection" (e) visualization
+                if (Math.random() > 0.95) {
+                    d.classList.add('error-injection');
+                    d.innerText = '$e$';
+                    setTimeout(() => d.classList.remove('error-injection'), 300);
+                }
+            });
+
+            if (tick === 10) status.innerText = 'Injecting LWE Errors...';
+            if (tick === 18) status.innerText = 'Stabilizing Lattice...';
+
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(interval);
+            
+            // Success State
+            status.innerText = 'ENCRYPTION COMPLETE';
+            status.classList.remove('animate-pulse');
+            status.style.color = '#00FF41';
+            statusDesc.innerText = 'Lattice vectors stabilized. Ciphertext generated successfully.';
+            statusIcon.innerHTML = '<span class="material-symbols-outlined text-3xl text-primary-fixed-dim" style="font-variation-settings: \'FILL\' 1;">verified_user</span>';
+            statusIcon.classList.remove('animate-pulse');
+            statusIcon.style.borderColor = '#00FF41';
+            
+            btn.classList.remove('animate-pulse');
+            btnText.innerHTML = 'Payload Secured <span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>';
+            btn.classList.replace('bg-primary-container', 'bg-surface-container-high');
+            btn.classList.replace('text-on-primary-fixed', 'text-primary-fixed-dim');
+            
+            // Download button reveal with glow
+            downloadBtn.disabled = false;
+            downloadBtn.classList.replace('bg-surface-container-high', 'bg-primary-container');
+            downloadBtn.classList.replace('text-on-surface-variant/30', 'text-on-primary-fixed');
+            downloadBtn.classList.add('success-glow', 'cursor-pointer');
+            
+            visualizerDigits.forEach(d => {
+                d.classList.remove('encrypting-digit');
+                d.style.opacity = '1';
+                d.style.color = '#00FF41';
+            });
+        }, 2500);
+    }
+</script>
+</body></html>

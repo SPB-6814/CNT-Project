@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "katex/dist/katex.min.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-mono);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  /* Obsidian Background */
+  --background: #0A0A0B;
+  --foreground: #e5e2e3;
+  
+  /* Slate-Gray Surfaces */
+  --card: #1E1E20;
+  --card-foreground: #e5e2e3;
+  --popover: #1E1E20;
+  --popover-foreground: #e5e2e3;
+  
+  /* Terminal-Green Primary */
+  --primary: #00FF41;
+  --primary-foreground: #000000;
+  
+  /* Amber Warnings */
+  --warning: #FFBF00;
+  --warning-foreground: #000000;
+  
+  --secondary: #353436;
+  --secondary-foreground: #e5e2e3;
+  
+  --muted: #1E1E20;
+  --muted-foreground: #b9ccb2;
+  
+  --accent: #1E1E20;
+  --accent-foreground: #00FF41;
+  
+  --destructive: #ffb4ab;
+  --destructive-foreground: #690005;
+  
+  /* Borders - Slate-Gray at ~30% opacity or a solid approximation */
+  --border: #2A2A2B;
+  --input: #1E1E20;
+  --ring: #00FF41;
+  
+  /* Shapes - 4px Base */
+  --radius: 0.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-[#1E1E20]/70 backdrop-blur-[20px] border border-[#1E1E20] shadow-[0_4px_30px_rgba(0,0,0,0.1)];
+  }
+  .terminal-glow {
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+  }
+  .terminal-glow-active {
+    box-shadow: 0 0 12px #00FF41;
+  }
+}

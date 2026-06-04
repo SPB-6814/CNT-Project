@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>POST-QUANTUM FILE ENCRYPTER | Key Generation Chamber</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      background-color: #131314;
+      color: #e5e2e3;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glass-panel {
+      background: rgba(30, 30, 32, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(132, 150, 126, 0.3);
+    }
+    .marching-ants {
+      background-image: linear-gradient(90deg, #84967e 50%, transparent 50%), linear-gradient(90deg, #84967e 50%, transparent 50%), linear-gradient(0deg, #84967e 50%, transparent 50%), linear-gradient(0deg, #84967e 50%, transparent 50%);
+      background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+      background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+      background-position: left top, right bottom, left bottom, right top;
+      animation: border-dance 1s infinite linear;
+    }
+    @keyframes border-dance {
+      0% { background-position: left top, right bottom, left bottom, right top; }
+      100% { background-position: left 15px top, right 15px bottom, left bottom 15px, right top 15px; }
+    }
+    .segment-progress {
+      background: repeating-linear-gradient(90deg, #00ff41 0px, #00ff41 10px, transparent 10px, transparent 14px);
+    }
+    .terminal-scrollbar::-webkit-scrollbar { width: 4px; }
+    .terminal-scrollbar::-webkit-scrollbar-track { background: #0e0e0f; }
+    .terminal-scrollbar::-webkit-scrollbar-thumb { background: #3b4b37; }
+  </style>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#ebffe2",
+            "secondary-container": "#ffbf00",
+            "on-primary-fixed": "#002203",
+            "outline": "#84967e",
+            "on-primary": "#003907",
+            "surface-variant": "#353436",
+            "on-secondary": "#402d00",
+            "primary-fixed": "#72ff70",
+            "surface": "#131314",
+            "primary-fixed-dim": "#00e639",
+            "on-surface": "#e5e2e3",
+            "on-secondary-fixed": "#261a00",
+            "on-secondary-fixed-variant": "#5c4300",
+            "surface-container-highest": "#353436",
+            "on-primary-fixed-variant": "#00530e",
+            "error-container": "#93000a",
+            "on-primary-container": "#007117",
+            "surface-container-low": "#1c1b1c",
+            "tertiary-container": "#dfdcde",
+            "on-tertiary-fixed": "#1b1b1d",
+            "surface-container-lowest": "#0e0e0f",
+            "inverse-surface": "#e5e2e3",
+            "surface-container-high": "#2a2a2b",
+            "on-error-container": "#ffdad6",
+            "primary-container": "#00ff41",
+            "error": "#ffb4ab",
+            "secondary-fixed": "#ffdfa0",
+            "tertiary": "#fbf8fb",
+            "secondary-fixed-dim": "#fbbc00",
+            "on-tertiary-container": "#616063",
+            "on-error": "#690005",
+            "tertiary-fixed": "#e4e2e4",
+            "on-surface-variant": "#b9ccb2",
+            "secondary": "#ffe2ab",
+            "on-background": "#e5e2e3",
+            "on-tertiary-fixed-variant": "#474649",
+            "surface-container": "#201f20",
+            "surface-bright": "#3a393a",
+            "inverse-on-surface": "#313031",
+            "inverse-primary": "#006e16",
+            "surface-dim": "#131314",
+            "on-tertiary": "#303032",
+            "background": "#131314",
+            "tertiary-fixed-dim": "#c8c6c8",
+            "on-secondary-container": "#6d5000",
+            "surface-tint": "#00e639",
+            "outline-variant": "#3b4b37"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "md": "24px",
+            "margin-mobile": "16px",
+            "xl": "80px",
+            "base": "8px",
+            "sm": "12px",
+            "xs": "4px",
+            "gutter": "24px",
+            "margin-desktop": "64px",
+            "lg": "48px"
+          },
+          "fontFamily": {
+            "headline-sm": ["JetBrains Mono"],
+            "headline-lg": ["JetBrains Mono"],
+            "body-md": ["Inter"],
+            "headline-md": ["JetBrains Mono"],
+            "headline-lg-mobile": ["JetBrains Mono"],
+            "body-lg": ["Inter"],
+            "label-sm": ["JetBrains Mono"],
+            "label-md": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+            "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+            "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+            "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+            "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+            "label-sm": ["10px", {"lineHeight": "1.2", "fontWeight": "500"}],
+            "label-md": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}]
+          }
+        },
+      },
+    }
+  </script>
+</head>
+<body class="font-body-md text-on-surface bg-surface min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-surface/80 backdrop-blur-md border-b border-outline/30 shadow-[0_0_15px_rgba(0,230,57,0.1)]">
+<div class="font-headline-md text-headline-md font-bold tracking-tighter text-primary-fixed uppercase">
+      POST-QUANTUM FILE ENCRYPTER
+    </div>
+<nav class="hidden md:flex items-center gap-md">
+<a class="font-label-md text-label-md text-primary-fixed border-b-2 border-primary-fixed pb-1 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95 duration-100" href="#">Key Chamber</a>
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95 duration-100" href="#">Encrypt (Alice)</a>
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95 duration-100" href="#">Decrypt (Bob)</a>
+</nav>
+<div class="flex items-center gap-base">
+<button class="p-xs text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="p-xs text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-32 pb-xl px-margin-mobile md:px-0 flex items-center justify-center relative overflow-hidden">
+<!-- Ambient Background Decoration -->
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary-container/5 blur-[100px] rounded-full"></div>
+<div class="w-full max-w-4xl glass-panel p-lg rounded-lg shadow-[0_0_30px_rgba(0,0,0,0.5)] z-10">
+<div class="mb-lg border-l-4 border-primary-container pl-md">
+<h1 class="font-headline-lg text-headline-lg text-primary-fixed mb-xs uppercase">Key Generation Chamber</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Generate your McEliece cryptosystem keypair. <span class="text-secondary-container font-semibold">Warning: Post-quantum keys are significantly larger than standard RSA keys.</span></p>
+</div>
+<!-- Warning Box -->
+<div class="bg-secondary-container/10 border-l-4 border-secondary-container p-md mb-lg">
+<div class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-secondary-container" data-icon="warning">warning</span>
+<p class="font-headline-sm text-headline-sm text-secondary-container leading-relaxed">
+            Note: Post-Quantum McEliece keys are massive. Public keys can range from 250KB to over 1MB. Ensure you have stable storage before proceeding.
+          </p>
+</div>
+</div>
+<!-- Generation Section -->
+<div class="space-y-lg">
+<div class="flex flex-col items-center">
+<button class="w-full py-md bg-primary-container text-on-primary-fixed font-headline-md text-headline-md font-bold uppercase transition-all active:scale-95 hover:shadow-[0_0_20px_#00FF41] group" id="generateBtn">
+            Generate Keypair
+          </button>
+</div>
+<!-- Progress (Hidden by default) -->
+<div class="hidden space-y-sm" id="progressArea">
+<div class="flex justify-between items-end font-label-md text-label-md text-primary-fixed-dim uppercase tracking-widest">
+<span id="statusText">Matrix Initialization</span>
+<span id="percentText">0%</span>
+</div>
+<div class="h-4 bg-surface-container-highest w-full overflow-hidden border border-outline/30">
+<div class="h-full segment-progress transition-all duration-300" id="progressBar" style="width: 0%"></div>
+</div>
+<!-- Terminal Log -->
+<div class="bg-surface-container-lowest border border-outline/20 p-md h-32 overflow-y-auto terminal-scrollbar font-label-md text-primary-fixed-dim/80">
+<div class="flex flex-col gap-xs" id="terminalLines">
+<p>&gt; Starting McEliece key generation sequence...</p>
+<p>&gt; Allocating 1.2MB for parity check matrix...</p>
+</div>
+</div>
+</div>
+<!-- Result Section (Hidden until generated) -->
+<div class="hidden pt-lg border-t border-outline/20" id="resultSection">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<button class="flex items-center justify-between px-md py-md border border-primary-fixed text-primary-fixed hover:bg-primary-fixed/10 transition-colors font-headline-sm text-headline-sm">
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                Download Public Key (.pub)
+              </span>
+<span class="text-label-md opacity-70">482 KB</span>
+</button>
+<button class="flex items-center justify-between px-md py-md border border-primary-fixed text-primary-fixed hover:bg-primary-fixed/10 transition-colors font-headline-sm text-headline-sm">
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                Download Private Key (.priv)
+              </span>
+<span class="text-label-md opacity-70">1.2 MB</span>
+</button>
+</div>
+<div class="mt-md p-md bg-primary-container/5 border border-primary-container/20 text-center font-label-md text-primary-container uppercase tracking-[0.2em]">
+            Keypair Generated Successfully and Stored in Secure Buffer
+          </div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-md px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-xs bg-surface-container-lowest/90 backdrop-blur-lg border-t border-outline/20">
+<div class="text-primary-fixed font-headline-sm uppercase">Engineered by Sparsh Pai Bir</div>
+<div class="flex items-center gap-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Documentation</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Source Code</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Security Audit</a>
+</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant/50">© 2024 POST-QUANTUM FILE ENCRYPTER</div>
+</footer>
+<script>
+    const generateBtn = document.getElementById('generateBtn');
+    const progressArea = document.getElementById('progressArea');
+    const progressBar = document.getElementById('progressBar');
+    const statusText = document.getElementById('statusText');
+    const percentText = document.getElementById('percentText');
+    const terminalLines = document.getElementById('terminalLines');
+    const resultSection = document.getElementById('resultSection');
+
+    const logMessages = [
+      "Generating Goppa code parameters...",
+      "Seeding hardware random number generator...",
+      "Performing Gaussian elimination on large matrix...",
+      "Constructing systematic generator matrix...",
+      "Applying Goppa polynomial transformations...",
+      "Randomizing permutation matrix elements...",
+      "Verifying key entropy metrics...",
+      "Finalizing 1.2MB cryptographic blob..."
+    ];
+
+    generateBtn.addEventListener('click', () => {
+      generateBtn.disabled = true;
+      generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      progressArea.classList.remove('hidden');
+      resultSection.classList.add('hidden');
+      
+      let progress = 0;
+      let logIndex = 0;
+
+      const interval = setInterval(() => {
+        progress += Math.floor(Math.random() * 8) + 2;
+        if (progress > 100) progress = 100;
+
+        progressBar.style.width = `${progress}%`;
+        percentText.innerText = `${progress}%`;
+
+        if (progress % 12 === 0 && logIndex < logMessages.length) {
+          const p = document.createElement('p');
+          p.innerText = `> ${logMessages[logIndex]}`;
+          terminalLines.appendChild(p);
+          terminalLines.parentElement.scrollTop = terminalLines.parentElement.scrollHeight;
+          statusText.innerText = logMessages[logIndex].replace('...', '');
+          logIndex++;
+        }
+
+        if (progress === 100) {
+          clearInterval(interval);
+          statusText.innerText = "Generation Complete";
+          setTimeout(() => {
+            resultSection.classList.remove('hidden');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+          }, 500);
+        }
+      }, 150);
+    });
+  </script>
+</body></html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Decrypt (Bob) | Post-Quantum File Encrypter</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(30, 30, 32, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(132, 150, 126, 0.3);
+        }
+        .terminal-glow {
+            box-shadow: 0 0 15px rgba(0, 230, 57, 0.1);
+        }
+        .marching-ants {
+            background-image: linear-gradient(90deg, #84967e 50%, transparent 50%), linear-gradient(90deg, #84967e 50%, transparent 50%), linear-gradient(0deg, #84967e 50%, transparent 50%), linear-gradient(0deg, #84967e 50%, transparent 50%);
+            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+            background-size: 15px 2px, 15px 2px, 2px 15px, 2px 15px;
+            background-position: left top, right bottom, left bottom, right top;
+            animation: border-dance 1s infinite linear;
+        }
+        @keyframes border-dance {
+            0% { background-position: left top, right bottom, left bottom, right top; }
+            100% { background-position: left 15px top, right 15px bottom, left bottom 15px, right top 15px; }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0e0e0f;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #353436;
+        }
+
+        /* Glitch Entrance Effect */
+        @keyframes glitch-reveal {
+            0% { opacity: 0; transform: translateY(10px); clip-path: inset(50% 0 50% 0); }
+            20% { clip-path: inset(20% 0 80% 0); transform: translateX(-2px); }
+            40% { clip-path: inset(80% 0 20% 0); transform: translateX(2px); }
+            60% { clip-path: inset(10% 0 90% 0); transform: translateX(-1px); }
+            80% { clip-path: inset(40% 0 60% 0); transform: translateX(1px); }
+            100% { opacity: 1; transform: translateY(0); clip-path: inset(0 0 0 0); }
+        }
+        .glitch-text {
+            animation: glitch-reveal 0.4s ease-out forwards;
+        }
+
+        /* Alert Pulse Effect */
+        @keyframes subtle-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 191, 0, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 191, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 191, 0, 0); }
+        }
+        .alert-pulse {
+            animation: subtle-pulse 2s infinite;
+        }
+
+        /* Typing cursor */
+        .typing::after {
+            content: '_';
+            animation: blink 0.8s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Loading Spinner */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-fast {
+            animation: spin 0.6s linear infinite;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary": "#ebffe2",
+                    "secondary-container": "#ffbf00",
+                    "on-primary-fixed": "#002203",
+                    "outline": "#84967e",
+                    "on-primary": "#003907",
+                    "surface-variant": "#353436",
+                    "on-secondary": "#402d00",
+                    "primary-fixed": "#72ff70",
+                    "surface": "#131314",
+                    "primary-fixed-dim": "#00e639",
+                    "on-surface": "#e5e2e3",
+                    "on-secondary-fixed": "#261a00",
+                    "on-secondary-fixed-variant": "#5c4300",
+                    "surface-container-highest": "#353436",
+                    "on-primary-fixed-variant": "#00530e",
+                    "error-container": "#93000a",
+                    "on-primary-container": "#007117",
+                    "surface-container-low": "#1c1b1c",
+                    "tertiary-container": "#dfdcde",
+                    "on-tertiary-fixed": "#1b1b1d",
+                    "surface-container-lowest": "#0e0e0f",
+                    "inverse-surface": "#e5e2e3",
+                    "surface-container-high": "#2a2a2b",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#00ff41",
+                    "error": "#ffb4ab",
+                    "secondary-fixed": "#ffdfa0",
+                    "tertiary": "#fbf8fb",
+                    "secondary-fixed-dim": "#fbbc00",
+                    "on-tertiary-container": "#616063",
+                    "on-error": "#690005",
+                    "tertiary-fixed": "#e4e2e4",
+                    "on-surface-variant": "#b9ccb2",
+                    "secondary": "#ffe2ab",
+                    "on-background": "#e5e2e3",
+                    "on-tertiary-fixed-variant": "#474649",
+                    "surface-container": "#201f20",
+                    "surface-bright": "#3a393a",
+                    "inverse-on-surface": "#313031",
+                    "inverse-primary": "#006e16",
+                    "surface-dim": "#131314",
+                    "on-tertiary": "#303032",
+                    "background": "#131314",
+                    "tertiary-fixed-dim": "#c8c6c8",
+                    "on-secondary-container": "#6d5000",
+                    "surface-tint": "#00e639",
+                    "outline-variant": "#3b4b37"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "md": "24px",
+                    "margin-mobile": "16px",
+                    "xl": "80px",
+                    "base": "8px",
+                    "sm": "12px",
+                    "xs": "4px",
+                    "gutter": "24px",
+                    "margin-desktop": "64px",
+                    "lg": "48px"
+            },
+            "fontFamily": {
+                    "headline-sm": ["JetBrains Mono"],
+                    "headline-lg": ["JetBrains Mono"],
+                    "body-md": ["Inter"],
+                    "headline-md": ["JetBrains Mono"],
+                    "headline-lg-mobile": ["JetBrains Mono"],
+                    "body-lg": ["Inter"],
+                    "label-sm": ["JetBrains Mono"],
+                    "label-md": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "headline-sm": ["18px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["10px", {"lineHeight": "1.2", "fontWeight": "500"}],
+                    "label-md": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.05em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 md:px-margin-desktop h-16 bg-surface/80 backdrop-blur-md border-b border-outline/30 shadow-[0_0_15px_rgba(0,230,57,0.1)]">
+<div class="font-headline-md text-headline-md font-bold tracking-tighter text-primary-fixed">POST-QUANTUM FILE ENCRYPTER</div>
+<nav class="hidden md:flex items-center gap-lg h-full">
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all h-full flex items-center px-xs" href="#">Key Chamber</a>
+<a class="font-label-md text-label-md text-on-surface-variant/70 hover:text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all h-full flex items-center px-xs" href="#">Encrypt (Alice)</a>
+<a class="font-label-md text-label-md text-primary-fixed border-b-2 border-primary-fixed pb-1 h-full flex items-center px-xs" href="#">Decrypt (Bob)</a>
+</nav>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95">terminal</button>
+<button class="material-symbols-outlined text-primary-fixed hover:shadow-[0_0_8px_#00E639] transition-all active:scale-95">settings</button>
+</div>
+</header>
+<main class="pt-24 pb-xl px-margin-mobile md:px-margin-desktop max-w-[1440px] mx-auto min-h-screen">
+<!-- Header Section -->
+<div class="mb-lg">
+<h1 class="font-headline-lg text-headline-lg text-primary-fixed uppercase tracking-tight mb-xs">Bob’s Vault: Decryption</h1>
+<p class="font-body-md text-on-surface-variant/80">Authorized access only. Post-quantum cryptographic decryption protocol active.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Inputs -->
+<div class="lg:col-span-7 space-y-gutter">
+<!-- Input 1: Payload -->
+<section class="glass-panel p-md border-outline/20">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm uppercase tracking-widest">Encrypted Payload</label>
+<div class="relative group cursor-pointer border-2 border-dashed border-outline/30 bg-surface-container-low h-48 flex flex-col items-center justify-center transition-all hover:border-primary-fixed-dim hover:bg-surface-container/50" id="dropzone-payload">
+<span class="material-symbols-outlined text-primary-fixed text-[48px] mb-base">upload_file</span>
+<p class="font-headline-sm text-headline-sm text-on-surface">Drag &amp; Drop .enc file</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">Maximum payload size: 256MB</p>
+<div class="absolute inset-0 marching-ants opacity-0 group-hover:opacity-100 pointer-events-none"></div>
+</div>
+</section>
+<!-- Input 2: Private Key -->
+<section class="glass-panel p-md border-outline/20">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm uppercase tracking-widest">Your Private Key</label>
+<div class="flex items-center gap-base p-sm bg-surface-container-lowest border border-outline/20">
+<span class="material-symbols-outlined text-secondary-container">vpn_key</span>
+<input class="hidden" id="key-upload" type="file"/>
+<label class="flex-grow cursor-pointer font-body-md text-on-surface-variant italic" for="key-upload" id="key-label">Select Private Key (.priv)...</label>
+<span class="font-label-md text-label-md text-secondary-container bg-secondary-container/10 px-xs py-1 border border-secondary-container/30 uppercase">Required</span>
+</div>
+<!-- Warning Box -->
+<div class="mt-md bg-secondary-container/10 border-l-4 border-secondary-container p-sm flex gap-sm items-start alert-pulse" id="security-alert">
+<span class="material-symbols-outlined text-secondary-container" style="font-variation-settings: 'FILL' 1;">warning</span>
+<p class="font-label-md text-label-md text-secondary-container leading-relaxed">
+<span class="font-bold">SECURITY ALERT:</span> Private keys must never leave this sandbox. Ensure you are using the corresponding key generated in the Key Chamber.
+                        </p>
+</div>
+</section>
+<!-- Main Action -->
+<div class="pt-sm">
+<button class="w-full py-md bg-primary-container text-on-primary-fixed font-headline-sm text-headline-sm font-bold uppercase tracking-widest hover:shadow-[0_0_20px_#00FF41] active:scale-[0.98] transition-all duration-100 flex items-center justify-center gap-sm disabled:opacity-70 disabled:cursor-wait" id="decrypt-trigger">
+<span class="material-symbols-outlined" id="btn-icon" style="font-variation-settings: 'FILL' 1;">lock_open</span>
+<span id="btn-text">Decrypt Payload</span>
+</button>
+</div>
+</div>
+<!-- Right Column: Log & Output -->
+<div class="lg:col-span-5 space-y-gutter">
+<!-- Decryption Log -->
+<section class="glass-panel p-md border-outline/20 flex flex-col h-[320px]">
+<div class="flex justify-between items-center mb-sm">
+<label class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest">Decryption Log</label>
+<span class="inline-block w-2 h-2 rounded-full bg-primary-fixed shadow-[0_0_5px_#72ff70] animate-pulse"></span>
+</div>
+<div class="flex-grow bg-surface-container-lowest p-sm font-label-md text-label-md text-on-surface-variant/80 overflow-y-auto custom-scrollbar font-['JetBrains_Mono'] space-y-base" id="terminal-log">
+<div class="text-primary-fixed-dim">Initializing Bob's Decryption Vault...</div>
+<div class="flex gap-base"><span>[SYSTEM]</span> <span>Awaiting input vectors...</span></div>
+</div>
+</section>
+<!-- Output Box -->
+<section class="glass-panel p-md border-outline/20 relative group">
+<label class="block font-label-md text-label-md text-on-surface-variant mb-sm uppercase tracking-widest">Plaintext Result</label>
+<div class="relative overflow-hidden">
+<textarea class="w-full h-32 bg-surface-container-lowest border border-outline/10 p-md font-body-md text-on-surface resize-none focus:outline-none focus:border-primary-fixed-dim placeholder:text-on-surface-variant/20 transition-all" id="plaintext-output" placeholder="Decrypted content will appear here after verification..." readonly=""></textarea>
+<button class="absolute top-sm right-sm p-base bg-surface-container-high border border-outline/20 text-primary-fixed hover:bg-primary-fixed-dim hover:text-on-primary-fixed transition-colors">
+<span class="material-symbols-outlined">content_copy</span>
+</button>
+</div>
+<!-- Success Indicator (Hidden by default) -->
+<div class="hidden mt-md bg-primary-container/10 border-l-4 border-primary-container p-sm flex gap-sm items-start" id="success-indicator">
+<span class="material-symbols-outlined text-primary-fixed-dim" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<p class="font-label-md text-label-md text-primary-fixed-dim leading-relaxed font-bold">
+                            DECRYPTION SUCCESSFUL: INTEGRITY VERIFIED (HMAC-SHA3-512)
+                        </p>
+</div>
+</section>
+</div>
+</div>
+<!-- Decorative Aesthetic Element -->
+<div class="mt-xl grid grid-cols-1 md:grid-cols-3 gap-gutter opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
+<div class="h-32 border border-outline/10 bg-surface-container-low overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed-dim/5 to-transparent"></div>
+<div class="p-sm font-label-sm text-label-sm font-mono text-on-surface-variant/40">VECTOR_P_X001</div>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-primary-fixed-dim/20"></div>
+</div>
+<div class="h-32 border border-outline/10 bg-surface-container-low overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-secondary-container/5 to-transparent"></div>
+<div class="p-sm font-label-sm text-label-sm font-mono text-on-surface-variant/40">MATRIX_STAGED_M02</div>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-secondary-container/20"></div>
+</div>
+<div class="h-32 border border-outline/10 bg-surface-container-low overflow-hidden relative">
+<div class="absolute inset-0 bg-gradient-to-br from-primary-fixed-dim/5 to-transparent"></div>
+<div class="p-sm font-label-sm text-label-sm font-mono text-on-surface-variant/40">QUANTUM_ENTROPY_E03</div>
+<div class="absolute bottom-0 left-0 w-full h-1 bg-primary-fixed-dim/20"></div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-md px-6 md:px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-xs bg-surface-container-lowest/90 backdrop-blur-lg border-t border-outline/20">
+<div class="text-primary-fixed font-headline-sm uppercase tracking-tight">POST-QUANTUM ENGINE</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant/50">
+            Engineered by Sparsh Pai Bir | Computer Engineering
+        </div>
+<div class="flex gap-md">
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Documentation</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Source Code</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant/50 hover:text-primary-fixed transition-colors" href="#">Security Audit</a>
+</div>
+</footer>
+<script>
+        const decryptBtn = document.getElementById('decrypt-trigger');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const terminalLog = document.getElementById('terminal-log');
+        const successIndicator = document.getElementById('success-indicator');
+        const textArea = document.getElementById('plaintext-output');
+        const securityAlert = document.getElementById('security-alert');
+        const keyUpload = document.getElementById('key-upload');
+        const keyLabel = document.getElementById('key-label');
+
+        let isFileLoaded = false;
+        let isKeyLoaded = false;
+
+        const checkInputs = () => {
+            if (isFileLoaded && isKeyLoaded) {
+                securityAlert.classList.remove('alert-pulse');
+            } else {
+                securityAlert.classList.add('alert-pulse');
+            }
+        };
+
+        const typeLine = async (text, type) => {
+            const entry = document.createElement('div');
+            if (type === 'success') entry.className = 'text-primary-fixed-dim pl-md';
+            if (type === 'final') entry.className = 'text-primary-container font-bold mt-sm';
+            terminalLog.appendChild(entry);
+            
+            entry.classList.add('typing');
+            for (let char of text) {
+                entry.innerText += char;
+                await new Promise(r => setTimeout(r, 20));
+            }
+            entry.classList.remove('typing');
+            terminalLog.scrollTop = terminalLog.scrollHeight;
+        };
+
+        decryptBtn.addEventListener('click', async () => {
+            if (decryptBtn.disabled) return;
+
+            terminalLog.innerHTML = '<div class="text-primary-fixed-dim">Initializing Bob\'s Decryption Vault...</div>';
+            decryptBtn.disabled = true;
+            btnText.innerText = "DECRYPTING...";
+            btnIcon.innerText = "sync";
+            btnIcon.classList.add('animate-spin-fast');
+            
+            // Animation sequence
+            await new Promise(r => setTimeout(r, 800));
+            await typeLine("1. Undo Permutation: Mapping bitwise shuffles back to original indices...", "info");
+            await new Promise(r => setTimeout(r, 400));
+            await typeLine("   [OK] Permutation matrix inverted.", "success");
+            
+            await new Promise(r => setTimeout(r, 800));
+            await typeLine("2. Patterson Decode: Running Goppa polynomial error correction...", "info");
+            await new Promise(r => setTimeout(r, 400));
+            await typeLine("   [OK] Polynomial roots identified. Errors corrected.", "success");
+            
+            await new Promise(r => setTimeout(r, 800));
+            await typeLine("3. Undo Scramble: XORing with generated seed entropy...", "info");
+            await new Promise(r => setTimeout(r, 400));
+            await typeLine("   [OK] Data reconstructed.", "success");
+            
+            await typeLine(">> FINAL_RECONSTRUCTION: Plaintext recovered successfully.", "final");
+
+            // Final reveal
+            decryptBtn.disabled = false;
+            btnText.innerText = "Decrypt Payload";
+            btnIcon.innerText = "lock_open";
+            btnIcon.classList.remove('animate-spin-fast');
+            
+            successIndicator.classList.remove('hidden');
+            textArea.classList.add('glitch-text');
+            textArea.value = "DECRYPTED SECRET: The eagle has landed at 0400 hours. The key exchange was successful. Proceed with Phase 4 protocols. End communication.";
+            
+            setTimeout(() => {
+                textArea.classList.remove('glitch-text');
+            }, 500);
+        });
+
+        // Key Upload listener
+        keyUpload.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                isKeyLoaded = true;
+                keyLabel.innerText = e.target.files[0].name;
+                keyLabel.classList.remove('italic');
+                keyLabel.classList.add('text-primary-fixed-dim', 'font-bold');
+                checkInputs();
+            }
+        });
+
+        // Dropzone interaction
+        const dropzone = document.getElementById('dropzone-payload');
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-primary-fixed-dim');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-primary-fixed-dim');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-primary-fixed-dim');
+            isFileLoaded = true;
+            dropzone.innerHTML = `
+                <span class="material-symbols-outlined text-primary-fixed text-[48px] mb-base">description</span>
+                <p class="font-headline-sm text-headline-sm text-primary-fixed">payload_01.enc</p>
+                <p class="font-label-sm text-label-sm text-on-surface-variant mt-xs">12.4 MB Loaded</p>
+            `;
+            checkInputs();
+        });
+    </script>
+</body></html>
