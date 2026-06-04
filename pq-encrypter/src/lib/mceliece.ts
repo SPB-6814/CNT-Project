@@ -121,8 +121,11 @@ export function decrypt(privateKey: { S: Matrix, G: Matrix, P: Matrix }, ciphert
 
 export function textToBinaryVectors(text: string): Matrix[] {
   const vectors: Matrix[] = [];
-  for (let i = 0; i < text.length; i++) {
-    const charCode = text.charCodeAt(i);
+  // Encode to UTF-8 to handle unicode characters like emojis
+  const safeText = unescape(encodeURIComponent(text));
+  
+  for (let i = 0; i < safeText.length; i++) {
+    const charCode = safeText.charCodeAt(i);
     // Convert to 8 bits, then split into two 4-bit vectors
     const bits = charCode.toString(2).padStart(8, '0').split('').map(Number);
     vectors.push([bits.slice(0, 4)]);
@@ -141,5 +144,10 @@ export function binaryVectorsToText(vectors: Matrix[]): string {
     const charCode = parseInt(bits.join(''), 2);
     text += String.fromCharCode(charCode);
   }
-  return text;
+  
+  try {
+    return decodeURIComponent(escape(text));
+  } catch (e) {
+    return text;
+  }
 }

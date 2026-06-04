@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileDropzone } from './Dropzone';
 import { Matrix } from '@/lib/mceliece';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,7 +17,11 @@ interface Props {
 export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
   const [publicKey, setPublicKey] = useState<{ G_hat: Matrix } | null>(null);
   const [pubFileName, setPubFileName] = useState<string>('');
+  
   const [text, setText] = useState<string>('');
+  const [originalFileName, setOriginalFileName] = useState<string>('message.txt');
+  const [payloadFileName, setPayloadFileName] = useState<string>('');
+  
   const [ciphertexts, setCiphertexts] = useState<Matrix[] | null>(null);
 
   const onDropPub = (files: File[]) => {
@@ -36,6 +41,20 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
     }
   };
 
+  const onDropPayload = (files: File[]) => {
+    const file = files[0];
+    if (file) {
+      setPayloadFileName(file.name);
+      setOriginalFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // We encrypt the Data URL directly for files (e.g., data:application/pdf;base64,JVBERi0...)
+        setText(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleEncrypt = async () => {
     if (!publicKey || !text) return;
     const result = await onEncrypt(publicKey, text);
@@ -45,9 +64,13 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
   const downloadEncrypted = () => {
     if (!ciphertexts) return;
     const element = document.createElement("a");
-    const file = new Blob([JSON.stringify({ ciphertexts })], { type: 'text/plain' });
+    const fileData = JSON.stringify({ 
+      filename: originalFileName,
+      ciphertexts 
+    });
+    const file = new Blob([fileData], { type: 'application/json' });
     element.href = URL.createObjectURL(file);
-    element.download = 'message.enc';
+    element.download = `${originalFileName}.enc.json`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
@@ -58,28 +81,47 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
       <CardHeader>
         <CardTitle className="text-xl text-primary font-mono tracking-tight">Encrypt Data</CardTitle>
         <CardDescription className="text-muted-foreground font-sans">
-          Upload a public key and enter data to encrypt using the McEliece cryptosystem.
+          Upload a public key and enter data (or drop a file) to encrypt using the McEliece cryptosystem.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
         <div className="space-y-2">
-          <label className="text-xs font-mono text-muted-foreground">1. PUBLIC KEY (.pub)</label>
+          <label className="text-xs font-mono text-muted-foreground">1. PUBLIC KEY (.json)</label>
           <FileDropzone 
             onDrop={onDropPub} 
-            accept={{ 'text/plain': ['.pub'] }} 
+            accept={{ 'application/json': ['.json'], 'text/plain': ['.json'] }} 
             label={pubFileName ? `Loaded: ${pubFileName}` : "Drag & drop public key here"} 
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-xs font-mono text-muted-foreground">2. PAYLOAD DATA</label>
-          <Textarea 
-            placeholder="Enter text to encrypt..." 
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="font-mono bg-background/50 border-border focus-visible:ring-primary h-32"
-          />
+          <Tabs defaultValue="text" className="w-full border border-border rounded-md p-2">
+            <TabsList className="grid w-full grid-cols-2 bg-background mb-4">
+              <TabsTrigger value="text" className="font-mono text-xs">TEXT INPUT</TabsTrigger>
+              <TabsTrigger value="file" className="font-mono text-xs">FILE UPLOAD (.txt, .pdf)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="text">
+              <Textarea 
+                placeholder="Enter text to encrypt..." 
+                value={text.startsWith('data:') ? '' : text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  setOriginalFileName('message.txt');
+                  setPayloadFileName('');
+                }}
+                className="font-mono bg-background/50 border-border focus-visible:ring-primary h-32"
+              />
+            </TabsContent>
+            <TabsContent value="file">
+              <FileDropzone 
+                onDrop={onDropPayload} 
+                label={payloadFileName ? `Loaded payload: ${payloadFileName}` : "Drag & drop a file (.txt, .pdf, etc.)"} 
+                className={payloadFileName ? "border-primary text-primary" : ""}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
         <Button 
@@ -99,11 +141,11 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
             >
               <div className="p-4 border border-border rounded bg-background/50">
                 <h3 className="text-sm font-mono text-primary mb-2 border-b border-primary/30 pb-1">Encryption Successful</h3>
-                <p className="text-xs font-mono text-muted-foreground break-all mb-4">
+                <p className="text-xs font-mono text-muted-foreground break-all mb-4 line-clamp-3">
                   {JSON.stringify(ciphertexts).substring(0, 200)}...
                 </p>
                 <Button variant="outline" size="sm" onClick={downloadEncrypted} className="w-full font-mono text-xs border-primary/50 text-primary hover:bg-primary/10">
-                  DOWNLOAD .ENC
+                  DOWNLOAD {originalFileName.toUpperCase()}.ENC.JSON
                 </Button>
               </div>
             </motion.div>
