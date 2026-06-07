@@ -19,9 +19,10 @@ interface HybridPayload {
 interface Props {
   isEncrypting: boolean;
   onEncrypt: (publicKey: { G_hat: Matrix }, text: string) => Promise<Matrix[]>;
+  onSync?: (data: any) => void;
 }
 
-export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
+export function EncryptTab({ isEncrypting, onEncrypt, onSync }: Props) {
   const [publicKey, setPublicKey] = useState<{ G_hat: Matrix } | null>(null);
   const [pubFileName, setPubFileName] = useState<string>('');
   
@@ -111,6 +112,10 @@ export function EncryptTab({ isEncrypting, onEncrypt }: Props) {
         encryptedPayload: encryptedPayloadBase64,
         ciphertexts: resultCiphertexts
       });
+
+      if (onSync) {
+        onSync({ mode: 'encrypt', publicKey, text: keyString, ciphertexts: resultCiphertexts });
+      }
     } catch (err) {
       alert("Encryption failed. File might be too large or invalid.");
       console.error(err);

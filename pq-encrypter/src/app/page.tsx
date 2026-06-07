@@ -1,14 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KeyGenerationTab } from '@/components/KeyGenerationTab';
 import { EncryptTab } from '@/components/EncryptTab';
 import { DecryptTab } from '@/components/DecryptTab';
-import { useMcElieceWorker } from '@/hooks/useMcElieceWorker';
+import { InternalsTab } from '@/components/InternalsTab';
 import { Shield } from 'lucide-react';
+import { Matrix } from '@/lib/mceliece';
+import { useMcElieceWorker } from '@/hooks/useMcElieceWorker';
+
+export type SyncData = {
+  mode: 'encrypt' | 'decrypt';
+  publicKey?: { G_hat: Matrix };
+  privateKey?: { S: Matrix, G: Matrix, P: Matrix };
+  text?: string;
+  ciphertexts?: Matrix[];
+};
 
 export default function Dashboard() {
+  const [syncData, setSyncData] = useState<SyncData | null>(null);
+
   const { 
     isGenerating, generateKeys, 
     isEncrypting, encrypt, 
@@ -38,7 +50,7 @@ export default function Dashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="keygen" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-card border border-border mb-8 p-1">
+          <TabsList className="grid w-full grid-cols-4 bg-card border border-border mb-8 p-1">
             <TabsTrigger 
               value="keygen" 
               className="font-mono text-xs md:text-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
@@ -57,6 +69,12 @@ export default function Dashboard() {
             >
               DECRYPT
             </TabsTrigger>
+            <TabsTrigger 
+              value="internals"
+              className="font-mono text-xs md:text-sm data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary"
+            >
+              INTERNALS
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="keygen" className="mt-0">
@@ -64,11 +82,15 @@ export default function Dashboard() {
           </TabsContent>
 
           <TabsContent value="encrypt" className="mt-0">
-            <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} />
+            <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} onSync={setSyncData} />
           </TabsContent>
 
           <TabsContent value="decrypt" className="mt-0">
-            <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} />
+            <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} />
+          </TabsContent>
+
+          <TabsContent value="internals" className="mt-0">
+            <InternalsTab syncData={syncData} />
           </TabsContent>
         </Tabs>
 

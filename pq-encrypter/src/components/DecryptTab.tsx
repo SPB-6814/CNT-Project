@@ -18,9 +18,10 @@ interface HybridPayload {
 interface Props {
   isDecrypting: boolean;
   onDecrypt: (privateKey: { S: Matrix, G: Matrix, P: Matrix }, ciphertexts: Matrix[]) => Promise<string>;
+  onSync?: (data: any) => void;
 }
 
-export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
+export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
   const [privateKey, setPrivateKey] = useState<any>(null);
   const [privFileName, setPrivFileName] = useState<string>('');
   
@@ -78,6 +79,10 @@ export function DecryptTab({ isDecrypting, onDecrypt }: Props) {
     if (!privateKey || !hybridPayload) return;
     
     try {
+      if (onSync) {
+        onSync({ mode: 'decrypt', privateKey, ciphertexts: hybridPayload.ciphertexts });
+      }
+
       // 1. Decrypt AES Key using McEliece
       const keyStringBase64 = await onDecrypt(privateKey, hybridPayload.ciphertexts);
       const keyBuffer = await base64ToArrayBufferAsync(keyStringBase64);
