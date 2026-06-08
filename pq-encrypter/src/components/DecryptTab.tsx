@@ -23,9 +23,10 @@ interface Props {
   onSync?: (data: any) => void;
   providedPrivateKey?: { S: Matrix, G: Matrix, P: Matrix };
   providedPayload?: HybridPayload;
+  providedPeerId?: string | null;
 }
 
-export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey, providedPayload }: Props) {
+export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey, providedPayload, providedPeerId }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [internalPrivateKey, setInternalPrivateKey] = useState<any>(null);
   const [internalPrivFileName, setInternalPrivFileName] = useState<string>('');
@@ -42,6 +43,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   const [originalFileNameDecrypted, setOriginalFileNameDecrypted] = useState<string>('decrypted_file.txt');
   
   const [decryptedText, setDecryptedText] = useState<string>('');
+  const [webrtcStatus, setWebrtcStatus] = useState<string>('');
 
   const onDropPriv = (files: File[]) => {
     const file = files[0];
@@ -83,12 +85,43 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   };
 
   useEffect(() => {
-    // When a deep link payload is provided, auto-decrypt immediately
-    if (providedPayload && providedPrivateKey && !decryptedText && !isDecrypting) {
+    // Auto-decrypt when we have both payload and key from deep-links or WebRTC
+    if (hybridPayload && privateKey && !decryptedText && !isDecrypting && (providedPayload || providedPeerId)) {
       handleDecrypt();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providedPayload, providedPrivateKey]);
+  }, [hybridPayload, privateKey, providedPayload, providedPeerId]);
+
+  useEffect(() => {
+    if (providedPeerId && !internalHybridPayload && !providedPayload) {
+      setWebrtcStatus('Connecting to desktop...');
+      import('peerjs').then(({ default: Peer }) => {
+        const peer = new Peer();
+        peer.on('open', () => {
+          const conn = peer.connect(providedPeerId);
+          conn.on('open', () => {
+            setWebrtcStatus('Connected! Downloading file...');
+          });
+          conn.on('data', (data: any) => {
+            try {
+              const payload = typeof data === 'string' ? JSON.parse(data) : data;
+              setInternalHybridPayload(payload);
+              setOriginalFileNameDecrypted(payload.filename || 'decrypted_file.txt');
+              setWebrtcStatus('');
+            } catch (e) {
+              console.error(e);
+              setWebrtcStatus('Error parsing received file.');
+            }
+          });
+          conn.on('error', (err) => {
+            console.error(err);
+            setWebrtcStatus('Connection failed.');
+          });
+        });
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providedPeerId]);
 
   const base64ToArrayBufferAsync = async (base64: string): Promise<ArrayBuffer> => {
     const res = await fetch(`data:application/octet-stream;base64,${base64}`);
@@ -173,6 +206,12 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
             />
           </div>
         </div>
+
+        {webrtcStatus && (
+          <div className="w-full p-4 border border-primary/50 bg-primary/10 rounded text-center animate-pulse">
+            <p className="font-mono text-primary font-bold">{webrtcStatus}</p>
+          </div>
+        )}
 
         <motion.div whileHover={(!isDecrypting && privateKey && hybridPayload) ? { scale: 1.02 } : {}} whileTap={(!isDecrypting && privateKey && hybridPayload) ? { scale: 0.98 } : {}}>
           <Button 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +40,18 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync, providedPublicKey,
   
   const [hybridPayload, setHybridPayload] = useState<HybridPayload | null>(null);
   const [qrLink, setQrLink] = useState<string>('');
+  const [webrtcStatus, setWebrtcStatus] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const peerRef = useRef<any>(null);
+
+  // Clean up peer on unmount
+  useEffect(() => {
+    return () => {
+      if (peerRef.current) {
+        peerRef.current.destroy();
+      }
+    };
+  }, []);
 
   const onDropPub = (files: File[]) => {
     const file = files[0];
@@ -136,8 +148,40 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync, providedPublicKey,
           // Limit length check just in case it's huge
           if (url.length < 3000) {
              setQrLink(url);
+             setWebrtcStatus('');
           } else {
-             setQrLink('');
+             setWebrtcStatus('Initializing P2P connection...');
+             const Peer = (await import('peerjs')).default;
+             if (peerRef.current) {
+               peerRef.current.destroy();
+             }
+             const peer = new Peer();
+             peerRef.current = peer;
+             
+             peer.on('open', (id) => {
+               const webrtcData = JSON.stringify({
+                 privateKey: providedPrivateKey,
+                 peerId: id
+               });
+               const webrtcCompressed = LZString.compressToEncodedURIComponent(webrtcData);
+               const webrtcUrl = `${window.location.origin}/#webrtc=${webrtcCompressed}`;
+               // Fallback: if even the peerId is too large, clear it (highly unlikely)
+               if (webrtcUrl.length < 3000) {
+                 setQrLink(webrtcUrl);
+                 setWebrtcStatus('Ready. Scan with phone...');
+               } else {
+                 setQrLink('');
+                 setWebrtcStatus('Error: Keys too large to encode.');
+               }
+             });
+             
+             peer.on('connection', (conn) => {
+               setWebrtcStatus('Phone connected! Sending file...');
+               conn.on('open', () => {
+                 conn.send(JSON.stringify(payloadObj));
+                 setWebrtcStatus('File sent successfully!');
+               });
+             });
           }
         } catch (e) {
           console.error("Failed to generate QR link", e);
@@ -249,6 +293,11 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync, providedPublicKey,
                     {window.location.hostname === 'localhost' && (
                       <p className="text-[10px] text-warning mt-4 text-center max-w-[200px]">
                         Note: To scan from a phone, access this page via your computer's local network IP (e.g., 192.168.x.x:3000) instead of localhost.
+                      </p>
+                    )}
+                    {webrtcStatus && (
+                      <p className="text-xs text-primary mt-4 text-center font-bold animate-pulse">
+                        {webrtcStatus}
                       </p>
                     )}
                   </div>

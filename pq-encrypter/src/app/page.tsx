@@ -24,27 +24,47 @@ export default function Dashboard() {
   const [syncData, setSyncData] = useState<SyncData | null>(null);
   const [generatedKeys, setGeneratedKeys] = useState<KeyPair | null>(null);
   const [deepLinkPayload, setDeepLinkPayload] = useState<any>(null);
+  const [deepLinkPeerId, setDeepLinkPeerId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('keygen');
 
   useEffect(() => {
     // Check hash on mount for deep link
     const hash = window.location.hash;
-    if (hash && hash.startsWith('#decrypt=')) {
-      try {
-        const compressed = hash.substring(9);
-        const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
-        if (decompressed) {
-          const data = JSON.parse(decompressed);
-          if (data.privateKey && data.payload) {
-            setGeneratedKeys({ publicKey: data.publicKey, privateKey: data.privateKey } as any);
-            setDeepLinkPayload(data.payload);
-            setActiveTab('decrypt');
-            // Clean up the hash
-            window.history.replaceState(null, '', window.location.pathname);
+    if (hash) {
+      if (hash.startsWith('#decrypt=')) {
+        try {
+          const compressed = hash.substring(9);
+          const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+          if (decompressed) {
+            const data = JSON.parse(decompressed);
+            if (data.privateKey && data.payload) {
+              setGeneratedKeys({ publicKey: data.publicKey, privateKey: data.privateKey } as any);
+              setDeepLinkPayload(data.payload);
+              setActiveTab('decrypt');
+              // Clean up the hash
+              window.history.replaceState(null, '', window.location.pathname);
+            }
           }
+        } catch (err) {
+          console.error("Failed to parse deep link:", err);
         }
-      } catch (err) {
-        console.error("Failed to parse deep link:", err);
+      } else if (hash.startsWith('#webrtc=')) {
+        try {
+          const compressed = hash.substring(8);
+          const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+          if (decompressed) {
+            const data = JSON.parse(decompressed);
+            if (data.privateKey && data.peerId) {
+              setGeneratedKeys({ publicKey: data.publicKey, privateKey: data.privateKey } as any);
+              setDeepLinkPeerId(data.peerId);
+              setActiveTab('decrypt');
+              // Clean up the hash
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to parse webrtc link:", err);
+        }
       }
     }
   }, []);
@@ -125,7 +145,7 @@ export default function Dashboard() {
 
           <TabsContent value="decrypt" className="mt-0">
             <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
-              <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} providedPrivateKey={generatedKeys?.privateKey} providedPayload={deepLinkPayload} />
+              <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} providedPrivateKey={generatedKeys?.privateKey} providedPayload={deepLinkPayload} providedPeerId={deepLinkPeerId} />
             </motion.div>
           </TabsContent>
 
