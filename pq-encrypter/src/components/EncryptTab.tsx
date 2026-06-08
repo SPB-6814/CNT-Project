@@ -19,6 +19,7 @@ interface HybridPayload {
 interface Props {
   isEncrypting: boolean;
   onEncrypt: (publicKey: { G_hat: Matrix }, text: string) => Promise<Matrix[]>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSync?: (data: any) => void;
 }
 

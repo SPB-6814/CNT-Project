@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { KeyPair, Matrix } from '../lib/mceliece';
 import type { WorkerMessage, WorkerResponse } from '../workers/mceliece.worker';
 
 export function useMcElieceWorker() {
-  const workerRef = useRef<Worker>(null);
+  const workerRef = useRef<Worker>(null as any);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEncrypting, setIsEncrypting] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);

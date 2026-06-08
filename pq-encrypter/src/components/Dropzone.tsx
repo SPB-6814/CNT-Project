@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { useCallback } from 'react';
-import { useDropzone, DropzoneOptions } from 'react-dropzone';
+import { useDropzone, DropzoneOptions, Accept } from 'react-dropzone';
 import { cn } from '@/lib/utils';
 import { UploadCloud } from 'lucide-react';
 

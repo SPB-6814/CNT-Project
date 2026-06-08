@@ -18,10 +18,12 @@ interface HybridPayload {
 interface Props {
   isDecrypting: boolean;
   onDecrypt: (privateKey: { S: Matrix, G: Matrix, P: Matrix }, ciphertexts: Matrix[]) => Promise<string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSync?: (data: any) => void;
 }
 
 export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [privateKey, setPrivateKey] = useState<any>(null);
   const [privFileName, setPrivFileName] = useState<string>('');
   
