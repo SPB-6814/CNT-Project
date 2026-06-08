@@ -87,10 +87,19 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   useEffect(() => {
     // Auto-decrypt when we have both payload and key from deep-links or WebRTC
     if (hybridPayload && privateKey && !decryptedText && !isDecrypting && (providedPayload || providedPeerId)) {
-      handleDecrypt();
+      setWebrtcStatus('Executing automatic decryption...');
+      handleDecrypt().then(() => {
+        setWebrtcStatus('');
+      });
+    } else if ((providedPayload || providedPeerId) && !decryptedText) {
+      if (!hybridPayload) {
+        setWebrtcStatus('Waiting for payload data...');
+      } else if (!privateKey) {
+        setWebrtcStatus('Waiting for private key...');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hybridPayload, privateKey, providedPayload, providedPeerId]);
+  }, [hybridPayload, privateKey, providedPayload, providedPeerId, isDecrypting]);
 
   useEffect(() => {
     if (providedPeerId && !internalHybridPayload && !providedPayload) {
@@ -167,9 +176,11 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
       const decoder = new TextDecoder();
       const text = decoder.decode(decryptedContent);
       setDecryptedText(text);
+      setWebrtcStatus('');
     } catch(err) {
       alert("Decryption failed. Incorrect private key or corrupted data.");
       console.error(err);
+      setWebrtcStatus('Decryption failed.');
     }
   };
 
