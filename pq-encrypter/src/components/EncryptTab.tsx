@@ -182,13 +182,15 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync }: Props) {
           </Tabs>
         </div>
 
-        <Button 
-          onClick={handleEncrypt} 
-          disabled={isEncrypting || !publicKey || !text}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
-        >
-          {isEncrypting ? "ENCRYPTING (HYBRID)..." : "EXECUTE ENCRYPTION"}
-        </Button>
+        <motion.div whileHover={(!isEncrypting && publicKey && text) ? { scale: 1.02 } : {}} whileTap={(!isEncrypting && publicKey && text) ? { scale: 0.98 } : {}}>
+          <Button 
+            onClick={handleEncrypt} 
+            disabled={isEncrypting || !publicKey || !text}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
+          >
+            {isEncrypting ? "ENCRYPTING (HYBRID)..." : "EXECUTE ENCRYPTION"}
+          </Button>
+        </motion.div>
 
         <AnimatePresence>
           {hybridPayload && (

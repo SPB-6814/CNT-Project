@@ -154,13 +154,15 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
           </div>
         </div>
 
-        <Button 
-          onClick={handleDecrypt} 
-          disabled={isDecrypting || !privateKey || !hybridPayload}
-          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
-        >
-          {isDecrypting ? "DECRYPTING (HYBRID)..." : "EXECUTE DECRYPTION"}
-        </Button>
+        <motion.div whileHover={(!isDecrypting && privateKey && hybridPayload) ? { scale: 1.02 } : {}} whileTap={(!isDecrypting && privateKey && hybridPayload) ? { scale: 0.98 } : {}}>
+          <Button 
+            onClick={handleDecrypt} 
+            disabled={isDecrypting || !privateKey || !hybridPayload}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
+          >
+            {isDecrypting ? "DECRYPTING (HYBRID)..." : "EXECUTE DECRYPTION"}
+          </Button>
+        </motion.div>
 
         <AnimatePresence>
           {decryptedText && (

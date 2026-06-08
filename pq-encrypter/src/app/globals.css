@@ -84,12 +84,47 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-[#1E1E20]/70 backdrop-blur-[20px] border border-[#1E1E20] shadow-[0_4px_30px_rgba(0,0,0,0.1)];
+    @apply bg-[#1E1E20]/70 backdrop-blur-[20px] border border-border shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300;
+  }
+  .glass-panel:hover {
+    @apply border-primary/30 shadow-[0_8px_32px_rgba(0,255,65,0.1)];
   }
   .terminal-glow {
     box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+    transition: box-shadow 0.3s ease;
+  }
+  .terminal-glow:hover {
+    box-shadow: 0 0 25px rgba(0, 255, 65, 0.4);
   }
   .terminal-glow-active {
     box-shadow: 0 0 12px #00FF41;
+  }
+
+  .bg-grid-pattern {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 255, 65, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 255, 65, 0.05) 1px, transparent 1px);
+    animation: pan-grid 20s linear infinite;
+  }
+
+  @keyframes pan-grid {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 40px; }
+  }
+
+  .pulse-slow {
+    animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.6));
+    }
+    50% {
+      opacity: .7;
+      filter: drop-shadow(0 0 2px rgba(0, 255, 65, 0.2));
+    }
   }
 }

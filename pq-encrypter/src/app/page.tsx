@@ -9,6 +9,7 @@ import { InternalsTab } from '@/components/InternalsTab';
 import { Shield } from 'lucide-react';
 import { Matrix } from '@/lib/mceliece';
 import { useMcElieceWorker } from '@/hooks/useMcElieceWorker';
+import { motion } from 'framer-motion';
 
 export type SyncData = {
   mode: 'encrypt' | 'decrypt';
@@ -30,14 +31,20 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 lg:p-12 relative overflow-hidden">
       {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none pulse-slow" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <main className="max-w-4xl mx-auto relative z-10">
+      <motion.main 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="max-w-4xl mx-auto relative z-10"
+      >
         
         {/* Header */}
         <header className="mb-12 flex items-center gap-4 border-b border-border pb-6">
-          <div className="w-12 h-12 rounded-lg bg-card border border-border flex items-center justify-center terminal-glow">
+          <div className="w-12 h-12 rounded-lg bg-card border border-border flex items-center justify-center terminal-glow pulse-slow">
             <Shield className="w-6 h-6 text-primary" />
           </div>
           <div>
@@ -78,23 +85,31 @@ export default function Dashboard() {
           </TabsList>
 
           <TabsContent value="keygen" className="mt-0">
-            <KeyGenerationTab isGenerating={isGenerating} onGenerate={generateKeys} />
+            <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
+              <KeyGenerationTab isGenerating={isGenerating} onGenerate={generateKeys} />
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="encrypt" className="mt-0">
-            <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} onSync={setSyncData} />
+            <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
+              <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} onSync={setSyncData} />
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="decrypt" className="mt-0">
-            <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} />
+            <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
+              <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} />
+            </motion.div>
           </TabsContent>
 
           <TabsContent value="internals" className="mt-0">
-            <InternalsTab syncData={syncData} />
+            <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
+              <InternalsTab syncData={syncData} />
+            </motion.div>
           </TabsContent>
         </Tabs>
 
-      </main>
+      </motion.main>
     </div>
   );
 }

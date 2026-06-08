@@ -30,16 +30,16 @@ export function InternalsTab({ syncData }: { syncData?: SyncData | null }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (syncData) {
       if (syncData.mode === 'encrypt' && syncData.publicKey && syncData.text) {
-        setKeys({ publicKey: syncData.publicKey, privateKey: null });
-        setMessageInput(syncData.text);
+        const { publicKey, text } = syncData;
+        setKeys({ publicKey, privateKey: null });
+        setMessageInput(text);
         
         try {
-          const parsedBlocks = textToBinaryVectors(syncData.text);
+          const parsedBlocks = textToBinaryVectors(text);
           const steps: SimulationStep[] = parsedBlocks.map(mMatrix => {
-            const cPrimeMatrix = multiplyMatrices(mMatrix, syncData.publicKey.G_hat);
+            const cPrimeMatrix = multiplyMatrices(mMatrix, publicKey.G_hat);
             const errorVec = Array(7).fill(0);
             errorVec[Math.floor(Math.random() * 7)] = 1;
             const eMatrix: Matrix = [errorVec];
@@ -57,15 +57,16 @@ export function InternalsTab({ syncData }: { syncData?: SyncData | null }) {
         }
       } 
       else if (syncData.mode === 'decrypt' && syncData.privateKey && syncData.ciphertexts) {
-        setKeys({ publicKey: null, privateKey: syncData.privateKey });
+        const { privateKey, ciphertexts } = syncData;
+        setKeys({ publicKey: null, privateKey });
         setMessageInput('DECRYPTING FROM CIPHERTEXTS...');
         
         try {
-          const steps: SimulationStep[] = syncData.ciphertexts.map((cMatrix: Matrix) => {
-            const pInv = getInverse(syncData.privateKey.P);
+          const steps: SimulationStep[] = ciphertexts.map((cMatrix: Matrix) => {
+            const pInv = getInverse(privateKey.P);
             const cHatMatrix = multiplyMatrices(cMatrix, pInv);
             const mHatMatrix = decodeHamming(cHatMatrix);
-            const sInv = getInverse(syncData.privateKey.S);
+            const sInv = getInverse(privateKey.S);
             const mDecryptedMatrix = multiplyMatrices(mHatMatrix, sInv);
 
             return {
@@ -228,14 +229,14 @@ export function InternalsTab({ syncData }: { syncData?: SyncData | null }) {
           </div>
         )}
 
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {step && (
             <motion.div 
               key={currentStepIndex}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, staggerChildren: 0.15 }}
               className="space-y-6 pt-2 overflow-hidden"
             >
               

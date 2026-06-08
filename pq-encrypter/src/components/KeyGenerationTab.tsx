@@ -59,13 +59,15 @@ export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
       </CardHeader>
       <CardContent className="space-y-6">
         {!keys && (
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
-          >
-            {isGenerating ? "GENERATING MATRICES..." : "INITIALIZE KEYPAIR GENERATION"}
-          </Button>
+          <motion.div whileHover={!isGenerating ? { scale: 1.02 } : {}} whileTap={!isGenerating ? { scale: 0.98 } : {}}>
+            <Button 
+              onClick={handleGenerate} 
+              disabled={isGenerating}
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-mono font-bold terminal-glow hover:terminal-glow-active transition-all duration-300"
+            >
+              {isGenerating ? "GENERATING MATRICES..." : "INITIALIZE KEYPAIR GENERATION"}
+            </Button>
+          </motion.div>
         )}
 
         <AnimatePresence>
