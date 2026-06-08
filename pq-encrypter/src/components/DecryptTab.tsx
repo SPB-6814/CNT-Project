@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileDropzone } from './Dropzone';
 import { Matrix } from '@/lib/mceliece';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, QrCode } from 'lucide-react';
+import { Download, QrCode, Upload } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import LZString from 'lz-string';
+import jsQR from 'jsqr';
 
 interface HybridPayload {
   filename: string;
@@ -47,6 +48,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   const [decryptedText, setDecryptedText] = useState<string>('');
   const [webrtcStatus, setWebrtcStatus] = useState<string>('');
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const onDropPriv = (files: File[]) => {
     const file = files[0];
@@ -124,6 +126,38 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
       } catch (err) {
         console.error("Failed to parse scanned QR code:", err);
       }
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code) {
+            handleScan([{ rawValue: code.data }]);
+          } else {
+            alert("No QR code found in this image.");
+          }
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+    // Reset input so the same file can be uploaded again if needed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -262,7 +296,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
       <CardContent className="space-y-6">
         
         {isScanning && (
-          <div className="w-full max-w-sm mx-auto overflow-hidden rounded-lg border-2 border-primary">
+          <div className="w-full max-w-sm mx-auto overflow-hidden rounded-lg border-2 border-primary flex flex-col items-center">
             <Scanner 
               onScan={handleScan} 
               onError={(error: any) => {
@@ -272,7 +306,26 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
                 }
               }} 
             />
-            <p className="text-center text-xs text-primary mt-2 mb-2 font-mono">Point your camera at the QR Code...</p>
+            <div className="flex flex-col items-center w-full bg-background p-4 border-t border-primary/20">
+              <p className="text-center text-xs text-primary mb-3 font-mono">Point your camera at the QR Code...</p>
+              <span className="text-[10px] text-muted-foreground font-mono mb-2">OR</span>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full font-mono text-xs border-primary/50 text-primary hover:bg-primary/10"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                UPLOAD QR IMAGE
+              </Button>
+            </div>
           </div>
         )}
 
