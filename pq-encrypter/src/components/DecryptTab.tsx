@@ -131,6 +131,12 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   const handleDecrypt = async () => {
     if (!privateKey || !hybridPayload) return;
     
+    if (!window.crypto || !window.crypto.subtle) {
+      alert("Error: Decryption requires a secure context (HTTPS or localhost). Since you are accessing this on a local IP via HTTP, the browser disables cryptography. Please deploy the app or use a tunneling service like ngrok to test on mobile.");
+      setWebrtcStatus("Decryption blocked: Insecure HTTP connection.");
+      return;
+    }
+
     try {
       if (onSync) {
         onSync({ mode: 'decrypt', privateKey, ciphertexts: hybridPayload.ciphertexts });
@@ -268,6 +274,12 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
                             }
                           })()}
                         </div>
+                      </div>
+                    {/* Show a preview if it's a PDF file! */}
+                    {(decryptedText.includes('application/pdf') || originalFileNameDecrypted.endsWith('.pdf')) && (
+                      <div className="mt-4 w-full text-left border-t border-border pt-4">
+                        <p className="text-xs text-muted-foreground font-mono mb-2">PDF PREVIEW:</p>
+                        <iframe src={decryptedText} className="w-full h-96 border border-border rounded bg-white" title="PDF Preview" />
                       </div>
                     )}
                   </div>
