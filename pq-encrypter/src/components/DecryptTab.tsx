@@ -275,6 +275,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
                           })()}
                         </div>
                       </div>
+                    )}
                     {/* Show a preview if it's a PDF file! */}
                     {(decryptedText.includes('application/pdf') || originalFileNameDecrypted.endsWith('.pdf')) && (
                       <div className="mt-4 w-full text-left border-t border-border pt-4">
