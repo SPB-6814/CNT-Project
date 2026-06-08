@@ -8,6 +8,8 @@ import { FileDropzone } from './Dropzone';
 import { Matrix } from '@/lib/mceliece';
 import { Textarea } from '@/components/ui/textarea';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
+import LZString from 'lz-string';
 
 interface HybridPayload {
   filename: string;
@@ -21,27 +23,33 @@ interface Props {
   onEncrypt: (publicKey: { G_hat: Matrix }, text: string) => Promise<Matrix[]>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSync?: (data: any) => void;
+  providedPublicKey?: { G_hat: Matrix };
+  providedPrivateKey?: { S: Matrix, G: Matrix, P: Matrix };
 }
 
-export function EncryptTab({ isEncrypting, onEncrypt, onSync }: Props) {
-  const [publicKey, setPublicKey] = useState<{ G_hat: Matrix } | null>(null);
-  const [pubFileName, setPubFileName] = useState<string>('');
+export function EncryptTab({ isEncrypting, onEncrypt, onSync, providedPublicKey, providedPrivateKey }: Props) {
+  const [internalPublicKey, setInternalPublicKey] = useState<{ G_hat: Matrix } | null>(null);
+  const [internalPubFileName, setInternalPubFileName] = useState<string>('');
   
+  const publicKey = internalPublicKey || providedPublicKey;
+  const pubFileName = internalPubFileName || (providedPublicKey ? 'Auto-generated Key' : '');
+
   const [text, setText] = useState<string>('');
   const [originalFileName, setOriginalFileName] = useState<string>('message.txt');
   const [payloadFileName, setPayloadFileName] = useState<string>('');
   
   const [hybridPayload, setHybridPayload] = useState<HybridPayload | null>(null);
+  const [qrLink, setQrLink] = useState<string>('');
 
   const onDropPub = (files: File[]) => {
     const file = files[0];
     if (file) {
-      setPubFileName(file.name);
+      setInternalPubFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const key = JSON.parse(e.target?.result as string);
-          if (key.G_hat) setPublicKey(key);
+          if (key.G_hat) setInternalPublicKey(key);
         } catch (err) {
           alert("Invalid public key file");
         }
@@ -107,12 +115,36 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync }: Props) {
       // 4. Encrypt AES Key with Post-Quantum McEliece algorithm
       const resultCiphertexts = await onEncrypt(publicKey, keyString);
       
-      setHybridPayload({
+      const payloadObj = {
         filename: originalFileName,
         iv: Array.from(iv),
         encryptedPayload: encryptedPayloadBase64,
         ciphertexts: resultCiphertexts
-      });
+      };
+      
+      setHybridPayload(payloadObj);
+
+      if (providedPrivateKey) {
+        try {
+          const linkData = JSON.stringify({
+            publicKey: publicKey,
+            privateKey: providedPrivateKey,
+            payload: payloadObj
+          });
+          const compressed = LZString.compressToEncodedURIComponent(linkData);
+          const url = `${window.location.origin}/#decrypt=${compressed}`;
+          // Limit length check just in case it's huge
+          if (url.length < 3000) {
+             setQrLink(url);
+          } else {
+             setQrLink('');
+          }
+        } catch (e) {
+          console.error("Failed to generate QR link", e);
+        }
+      } else {
+        setQrLink('');
+      }
 
       if (onSync) {
         onSync({ mode: 'encrypt', publicKey, text: keyString, ciphertexts: resultCiphertexts });
@@ -208,6 +240,19 @@ export function EncryptTab({ isEncrypting, onEncrypt, onSync }: Props) {
                 <Button variant="outline" size="sm" onClick={downloadEncrypted} className="w-full font-mono text-xs border-primary/50 text-primary hover:bg-primary/10">
                   DOWNLOAD {hybridPayload.filename.toUpperCase()}.ENC.JSON
                 </Button>
+                {qrLink && (
+                  <div className="mt-4 border-t border-border pt-4 flex flex-col items-center">
+                    <p className="text-xs text-muted-foreground font-sans font-bold mb-2 text-primary">SCAN WITH PHONE TO DECRYPT</p>
+                    <div className="p-4 bg-white rounded border border-border">
+                      <QRCodeSVG value={qrLink} size={200} />
+                    </div>
+                    {window.location.hostname === 'localhost' && (
+                      <p className="text-[10px] text-warning mt-4 text-center max-w-[200px]">
+                        Note: To scan from a phone, access this page via your computer's local network IP (e.g., 192.168.x.x:3000) instead of localhost.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

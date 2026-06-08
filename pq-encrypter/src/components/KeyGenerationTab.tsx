@@ -11,14 +11,18 @@ import { RefreshCw } from 'lucide-react';
 interface Props {
   isGenerating: boolean;
   onGenerate: () => Promise<KeyPair>;
+  onKeysGenerated?: (keys: KeyPair) => void;
 }
 
-export function KeyGenerationTab({ isGenerating, onGenerate }: Props) {
+export function KeyGenerationTab({ isGenerating, onGenerate, onKeysGenerated }: Props) {
   const [keys, setKeys] = useState<KeyPair | null>(null);
 
   const handleGenerate = async () => {
     const generatedKeys = await onGenerate();
     setKeys(generatedKeys);
+    if (onKeysGenerated) {
+      onKeysGenerated(generatedKeys);
+    }
   };
 
   const matrixToLatex = (matrix: number[][], name: string) => {

@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import LZString from 'lz-string';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KeyGenerationTab } from '@/components/KeyGenerationTab';
 import { EncryptTab } from '@/components/EncryptTab';
 import { DecryptTab } from '@/components/DecryptTab';
 import { InternalsTab } from '@/components/InternalsTab';
 import { Shield } from 'lucide-react';
-import { Matrix } from '@/lib/mceliece';
+import { Matrix, KeyPair } from '@/lib/mceliece';
 import { useMcElieceWorker } from '@/hooks/useMcElieceWorker';
 import { motion } from 'framer-motion';
 
@@ -21,6 +22,32 @@ export type SyncData = {
 
 export default function Dashboard() {
   const [syncData, setSyncData] = useState<SyncData | null>(null);
+  const [generatedKeys, setGeneratedKeys] = useState<KeyPair | null>(null);
+  const [deepLinkPayload, setDeepLinkPayload] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<string>('keygen');
+
+  useEffect(() => {
+    // Check hash on mount for deep link
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#decrypt=')) {
+      try {
+        const compressed = hash.substring(9);
+        const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+        if (decompressed) {
+          const data = JSON.parse(decompressed);
+          if (data.privateKey && data.payload) {
+            setGeneratedKeys({ publicKey: data.publicKey, privateKey: data.privateKey } as any);
+            setDeepLinkPayload(data.payload);
+            setActiveTab('decrypt');
+            // Clean up the hash
+            window.history.replaceState(null, '', window.location.pathname);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse deep link:", err);
+      }
+    }
+  }, []);
 
   const { 
     isGenerating, generateKeys, 
@@ -56,7 +83,7 @@ export default function Dashboard() {
         </header>
 
         {/* Tabs */}
-        <Tabs defaultValue="keygen" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 bg-card border border-border mb-8 p-1">
             <TabsTrigger 
               value="keygen" 
@@ -86,19 +113,19 @@ export default function Dashboard() {
 
           <TabsContent value="keygen" className="mt-0">
             <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
-              <KeyGenerationTab isGenerating={isGenerating} onGenerate={generateKeys} />
+              <KeyGenerationTab isGenerating={isGenerating} onGenerate={generateKeys} onKeysGenerated={setGeneratedKeys} />
             </motion.div>
           </TabsContent>
 
           <TabsContent value="encrypt" className="mt-0">
             <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
-              <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} onSync={setSyncData} />
+              <EncryptTab isEncrypting={isEncrypting} onEncrypt={encrypt} onSync={setSyncData} providedPublicKey={generatedKeys?.publicKey} providedPrivateKey={generatedKeys?.privateKey} />
             </motion.div>
           </TabsContent>
 
           <TabsContent value="decrypt" className="mt-0">
             <motion.div initial={{ opacity: 0, filter: 'blur(4px)' }} animate={{ opacity: 1, filter: 'blur(0px)' }} transition={{ duration: 0.4 }}>
-              <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} />
+              <DecryptTab isDecrypting={isDecrypting} onDecrypt={decrypt} onSync={setSyncData} providedPrivateKey={generatedKeys?.privateKey} providedPayload={deepLinkPayload} />
             </motion.div>
           </TabsContent>
 

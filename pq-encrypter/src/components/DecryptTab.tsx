@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileDropzone } from './Dropzone';
 import { Matrix } from '@/lib/mceliece';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface HybridPayload {
   filename: string;
@@ -20,15 +21,24 @@ interface Props {
   onDecrypt: (privateKey: { S: Matrix, G: Matrix, P: Matrix }, ciphertexts: Matrix[]) => Promise<string>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSync?: (data: any) => void;
+  providedPrivateKey?: { S: Matrix, G: Matrix, P: Matrix };
+  providedPayload?: HybridPayload;
 }
 
-export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
+export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey, providedPayload }: Props) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [privateKey, setPrivateKey] = useState<any>(null);
-  const [privFileName, setPrivFileName] = useState<string>('');
+  const [internalPrivateKey, setInternalPrivateKey] = useState<any>(null);
+  const [internalPrivFileName, setInternalPrivFileName] = useState<string>('');
   
-  const [hybridPayload, setHybridPayload] = useState<HybridPayload | null>(null);
-  const [encFileName, setEncFileName] = useState<string>('');
+  const privateKey = internalPrivateKey || providedPrivateKey;
+  const privFileName = internalPrivFileName || (providedPrivateKey ? 'Auto-generated Key' : '');
+  
+  const [internalHybridPayload, setInternalHybridPayload] = useState<HybridPayload | null>(null);
+  const [internalEncFileName, setInternalEncFileName] = useState<string>('');
+  
+  const hybridPayload = internalHybridPayload || providedPayload;
+  const encFileName = internalEncFileName || (providedPayload ? `Link: ${providedPayload.filename}` : '');
+  
   const [originalFileNameDecrypted, setOriginalFileNameDecrypted] = useState<string>('decrypted_file.txt');
   
   const [decryptedText, setDecryptedText] = useState<string>('');
@@ -36,12 +46,12 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
   const onDropPriv = (files: File[]) => {
     const file = files[0];
     if (file) {
-      setPrivFileName(file.name);
+      setInternalPrivFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const key = JSON.parse(e.target?.result as string);
-          if (key.S && key.G && key.P) setPrivateKey(key);
+          if (key.S && key.G && key.P) setInternalPrivateKey(key);
         } catch (err) {
           alert("Invalid private key file");
         }
@@ -53,13 +63,13 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
   const onDropEnc = (files: File[]) => {
     const file = files[0];
     if (file) {
-      setEncFileName(file.name);
+      setInternalEncFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target?.result as string);
           if (data.ciphertexts && data.iv && data.encryptedPayload) {
-            setHybridPayload(data);
+            setInternalHybridPayload(data);
             setOriginalFileNameDecrypted(data.filename || 'decrypted_file.txt');
           } else {
             alert("This payload uses the old encryption format without AES. Please re-encrypt.");
@@ -71,6 +81,14 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
       reader.readAsText(file);
     }
   };
+
+  useEffect(() => {
+    // When a deep link payload is provided, auto-decrypt immediately
+    if (providedPayload && providedPrivateKey && !decryptedText && !isDecrypting) {
+      handleDecrypt();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [providedPayload, providedPrivateKey]);
 
   const base64ToArrayBufferAsync = async (base64: string): Promise<ArrayBuffer> => {
     const res = await fetch(`data:application/octet-stream;base64,${base64}`);
@@ -194,7 +212,18 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
                           {(() => {
                             try {
                               const base64Data = decryptedText.split(',')[1];
-                              return decodeURIComponent(escape(atob(base64Data)));
+                              const decodedText = decodeURIComponent(escape(atob(base64Data)));
+                              return (
+                                <div className="space-y-4">
+                                  <div>{decodedText}</div>
+                                  {decodedText.length < 2500 && (
+                                    <div className="mt-4 flex flex-col items-center justify-center p-4 bg-white rounded border border-border w-fit mx-auto">
+                                      <p className="text-xs text-black mb-2 font-bold font-sans">Scan to read message</p>
+                                      <QRCodeSVG value={decodedText} size={200} />
+                                    </div>
+                                  )}
+                                </div>
+                              );
                             } catch (e) {
                               return "Preview not available.";
                             }
@@ -204,8 +233,16 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync }: Props) {
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 bg-[#0e0e0f] border border-border rounded font-mono text-sm text-foreground whitespace-pre-wrap max-h-64 overflow-y-auto">
-                    {decryptedText}
+                  <div className="space-y-4">
+                    <div className="p-4 bg-[#0e0e0f] border border-border rounded font-mono text-sm text-foreground whitespace-pre-wrap max-h-64 overflow-y-auto">
+                      {decryptedText}
+                    </div>
+                    {decryptedText.length < 2500 && (
+                      <div className="flex flex-col items-center justify-center p-4 bg-white rounded border border-border w-fit mx-auto">
+                        <p className="text-xs text-black mb-2 font-bold font-sans">Scan to read message</p>
+                        <QRCodeSVG value={decryptedText} size={200} />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
