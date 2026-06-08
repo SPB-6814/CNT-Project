@@ -263,7 +263,15 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
         
         {isScanning && (
           <div className="w-full max-w-sm mx-auto overflow-hidden rounded-lg border-2 border-primary">
-            <Scanner onScan={handleScan} />
+            <Scanner 
+              onScan={handleScan} 
+              onError={(error: any) => {
+                console.error(error);
+                if (error?.name === 'NotAllowedError') {
+                  alert("Camera access denied! Please allow camera permissions in your browser settings to scan QR codes.");
+                }
+              }} 
+            />
             <p className="text-center text-xs text-primary mt-2 mb-2 font-mono">Point your camera at the QR Code...</p>
           </div>
         )}
