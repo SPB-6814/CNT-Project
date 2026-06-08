@@ -6,8 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileDropzone } from './Dropzone';
 import { Matrix } from '@/lib/mceliece';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download } from 'lucide-react';
+import { Download, QrCode } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Scanner } from '@yudiel/react-qr-scanner';
+import LZString from 'lz-string';
 
 interface HybridPayload {
   filename: string;
@@ -44,6 +46,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   
   const [decryptedText, setDecryptedText] = useState<string>('');
   const [webrtcStatus, setWebrtcStatus] = useState<string>('');
+  const [isScanning, setIsScanning] = useState<boolean>(false);
 
   const onDropPriv = (files: File[]) => {
     const file = files[0];
@@ -84,14 +87,57 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
     }
   };
 
+  const handleScan = (result: any) => {
+    if (result && result.length > 0 && result[0].rawValue) {
+      const scannedUrl = result[0].rawValue;
+      try {
+        const hashIndex = scannedUrl.indexOf('#');
+        if (hashIndex !== -1) {
+          const hash = scannedUrl.substring(hashIndex);
+          if (hash.startsWith('#decrypt=')) {
+            const compressed = hash.substring(9);
+            const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+            if (decompressed) {
+              const data = JSON.parse(decompressed);
+              if (data.privateKey && data.payload) {
+                setInternalPrivateKey(data.privateKey);
+                setInternalHybridPayload(data.payload);
+                setOriginalFileNameDecrypted(data.payload.filename || 'decrypted_file.txt');
+                setIsScanning(false);
+              }
+            }
+          } else if (hash.startsWith('#webrtc=')) {
+            const compressed = hash.substring(8);
+            const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+            if (decompressed) {
+              const data = JSON.parse(decompressed);
+              if (data.privateKey && data.peerId) {
+                setInternalPrivateKey(data.privateKey);
+                // We fake passing a providedPeerId by explicitly triggering the WebRTC connection
+                // but since providedPeerId is a prop, we can instead handle it directly or add an internal state for peer ID.
+                setInternalPeerId(data.peerId);
+                setIsScanning(false);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse scanned QR code:", err);
+      }
+    }
+  };
+
+  const [internalPeerId, setInternalPeerId] = useState<string | null>(null);
+  const activePeerId = providedPeerId || internalPeerId;
+
   useEffect(() => {
     // Auto-decrypt when we have both payload and key from deep-links or WebRTC
-    if (hybridPayload && privateKey && !decryptedText && !isDecrypting && (providedPayload || providedPeerId)) {
+    if (hybridPayload && privateKey && !decryptedText && !isDecrypting && (providedPayload || activePeerId || internalHybridPayload)) {
       setWebrtcStatus('Executing automatic decryption...');
       handleDecrypt().then(() => {
         setWebrtcStatus('');
       });
-    } else if ((providedPayload || providedPeerId) && !decryptedText) {
+    } else if ((hybridPayload || activePeerId) && !decryptedText) {
       if (!hybridPayload) {
         setWebrtcStatus('Waiting for payload data...');
       } else if (!privateKey) {
@@ -99,15 +145,15 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hybridPayload, privateKey, providedPayload, providedPeerId, isDecrypting]);
+  }, [hybridPayload, privateKey, providedPayload, activePeerId, internalHybridPayload, isDecrypting]);
 
   useEffect(() => {
-    if (providedPeerId && !internalHybridPayload && !providedPayload) {
+    if (activePeerId && !internalHybridPayload && !providedPayload) {
       setWebrtcStatus('Connecting to desktop...');
       import('peerjs').then(({ default: Peer }) => {
         const peer = new Peer();
         peer.on('open', () => {
-          const conn = peer.connect(providedPeerId);
+          const conn = peer.connect(activePeerId);
           conn.on('open', () => {
             setWebrtcStatus('Connected! Downloading file...');
           });
@@ -130,7 +176,7 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
       });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [providedPeerId]);
+  }, [activePeerId]);
 
   const base64ToArrayBufferAsync = async (base64: string): Promise<ArrayBuffer> => {
     const res = await fetch(`data:application/octet-stream;base64,${base64}`);
@@ -197,13 +243,31 @@ export function DecryptTab({ isDecrypting, onDecrypt, onSync, providedPrivateKey
   return (
     <Card className="glass-panel border-border bg-card/60">
       <CardHeader>
-        <CardTitle className="text-xl text-primary font-mono tracking-tight">Decrypt Data</CardTitle>
+        <CardTitle className="text-xl text-primary font-mono tracking-tight flex items-center justify-between">
+          <span>Decrypt Data</span>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsScanning(!isScanning)}
+            className={`font-mono text-xs border-primary text-primary hover:bg-primary/20 ${isScanning ? 'bg-primary/20' : 'bg-transparent'}`}
+          >
+            <QrCode className="w-4 h-4 mr-2" />
+            {isScanning ? "CANCEL SCAN" : "SCAN QR CODE"}
+          </Button>
+        </CardTitle>
         <CardDescription className="text-muted-foreground font-sans">
-          Upload a hybrid-encrypted packet and your private key to reverse the process.
+          Upload a hybrid-encrypted packet and your private key, or scan a QR code from another device.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         
+        {isScanning && (
+          <div className="w-full max-w-sm mx-auto overflow-hidden rounded-lg border-2 border-primary">
+            <Scanner onScan={handleScan} />
+            <p className="text-center text-xs text-primary mt-2 mb-2 font-mono">Point your camera at the QR Code...</p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-xs font-mono text-muted-foreground">1. ENCRYPTED DATA (.json)</label>
